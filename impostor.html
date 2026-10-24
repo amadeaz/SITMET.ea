@@ -1,0 +1,1037 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>Odd One Out: Words - SITMET.ea Arcade</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Canvas Confetti CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+  
+  <!-- Google Fonts: Fredoka & Quicksand -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700;800&family=Quicksand:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'd-blue': '#1D4ED8',
+            'm-blue': '#3B82F6',
+            'l-blue': '#93C5FD',
+            'h-yellow': '#FACC15',
+            'd-yellow': '#CA8A04',
+            'h-red': '#EF4444',
+            'd-red': '#B91C1C',
+            'bg-soft': '#EFF6FF',
+            'txt-slate': '#1E293B',
+            brandBlue: '#3B82F6',
+            darkBlue: '#1D4ED8',
+            warmYellow: '#FACC15',
+            darkYellow: '#EAB308',
+            chiliRed: '#EF4444',
+            darkRed: '#991B1B',
+            skySoft: '#EFF6FF',
+            creamSoft: '#FEFCE8',
+          },
+          fontFamily: {
+            fredoka: ['Fredoka', 'sans-serif'],
+            quicksand: ['Quicksand', 'sans-serif'],
+          },
+          boxShadow: {
+            'pop-blue': '0px 6px 0px 0px #1D4ED8',
+            'pop-yellow': '0px 6px 0px 0px #CA8A04',
+            'pop-red': '0px 6px 0px 0px #991B1B',
+            'pop-green': '0px 6px 0px 0px #15803D',
+            'pop-card': '0px 6px 0px 0px #1D4ED8',
+            'pop-inner': 'inset 0px 4px 6px rgba(0, 0, 0, 0.1)',
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* Global Mobile Frame Locking */
+    body {
+      font-family: 'Quicksand', sans-serif;
+      background-color: #DBEAFE;
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: manipulation;
+    }
+
+    h1, h2, h3, .font-heading, .font-fredoka {
+      font-family: 'Fredoka', sans-serif;
+    }
+
+    .btn-pop-red {
+      background-color: #EF4444;
+      color: #FFFFFF;
+      border: 3px solid #1D4ED8;
+      box-shadow: 0px 4px 0px 0px #991B1B;
+      transition: all 0.1s ease;
+    }
+    .btn-pop-red:active {
+      transform: translateY(3px);
+      box-shadow: 0px 1px 0px 0px transparent;
+    }
+
+    .btn-pop-blue {
+      background-color: #3B82F6;
+      color: #FFFFFF;
+      border: 3px solid #1D4ED8;
+      box-shadow: 0px 4px 0px 0px #1E40AF;
+      transition: all 0.1s ease;
+    }
+    .btn-pop-blue:active {
+      transform: translateY(3px);
+      box-shadow: 0px 1px 0px 0px transparent;
+    }
+
+    /* Cartoon Button Active Press Animation */
+    .btn-pop {
+      transition: transform 0.05s ease, box-shadow 0.05s ease;
+    }
+    .btn-pop:active {
+      transform: translateY(4px) !important;
+      box-shadow: 0px 2px 0px 0px currentColor !important;
+    }
+
+    /* Custom Scrollbar styling for player list */
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+
+    /* Pop-in Modal Animation */
+    @keyframes popIn {
+      0% { transform: scale(0.8); opacity: 0; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    .animate-pop-in {
+      animation: popIn 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    }
+
+    @keyframes bounce-gentle {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-8px); }
+    }
+    .animate-bounce-gentle {
+      animation: bounce-gentle 2s infinite ease-in-out;
+    }
+
+    /* Card Flip animations */
+    .perspective-1000 {
+      perspective: 1000px;
+    }
+    .transform-style-3d {
+      transform-style: preserve-3d;
+    }
+    .backface-hidden {
+      backface-visibility: hidden;
+    }
+    .rotate-y-180 {
+      transform: rotateY(180deg);
+    }
+
+    .modal-backdrop {
+      background-color: rgba(15, 23, 42, 0.75);
+      backdrop-filter: blur(6px);
+    }
+  </style>
+</head>
+
+<body class="flex items-center justify-center p-0 sm:p-4">
+
+  <!-- MAIN MOBILE CONTAINER (Max width 400px, 100dvh) -->
+  <div id="game-app" class="relative w-full max-w-[400px] h-[100dvh] bg-skySoft text-txt-slate border-[6px] border-d-blue rounded-none sm:rounded-[36px] shadow-2xl flex flex-col justify-between overflow-hidden transition-colors duration-300">
+    
+    <!-- PERMANENT TOP BAR WITH RED (✕) EXIT BUTTON -->
+    <div class="w-full bg-white border-b-4 border-d-blue p-2.5 flex items-center justify-between z-30 shadow-sm shrink-0">
+      <div class="flex items-center gap-2">
+        <i class="fa-solid fa-user-ninja text-h-red text-xl"></i>
+        <span class="font-fredoka text-lg font-extrabold text-d-blue tracking-wide">OddOneOut!</span>
+      </div>
+      
+      <div class="flex items-center gap-2">
+        <!-- Sound Toggle Button -->
+        <button id="soundToggleBtn" onclick="toggleSound()" class="w-9 h-9 bg-blue-100 text-d-blue rounded-xl border-2 border-d-blue flex items-center justify-center text-sm active:scale-90 transition-transform">
+          <i id="soundIcon" class="fa-solid fa-volume-high"></i>
+        </button>
+
+        <!-- Permanent Red Exit Button (✕) -->
+        <button onclick="handleExitClick()" aria-label="Keluar Game" class="w-9 h-9 btn-pop-red rounded-xl flex items-center justify-center font-fredoka font-extrabold text-lg transition-transform">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- MAIN VIEW CONTAINER -->
+    <main id="main-content" class="flex-1 flex flex-col p-3 sm:p-4 overflow-hidden relative z-10">
+      
+      <!-- SCREEN 1: GAME SETUP -->
+      <section id="screen-setup" class="flex-1 flex flex-col justify-between overflow-y-auto no-scrollbar">
+        <div class="space-y-3">
+          <!-- Game Title Banner -->
+          <div class="text-center bg-white p-3 rounded-3xl border-4 border-darkBlue shadow-pop-blue">
+            <span class="inline-block px-3 py-0.5 bg-warmYellow border-2 border-darkBlue rounded-full text-[10px] font-bold text-darkBlue uppercase mb-1">
+              Multiplayer Local
+            </span>
+            <h2 class="font-heading text-xl font-black text-brandBlue drop-shadow-sm uppercase tracking-wide">
+              Odd One Out!
+            </h2>
+            <p class="text-[11px] font-semibold text-slate-600">Temukan siapa si Impostor di antara kalian!</p>
+          </div>
+
+          <!-- 1. Player Count Selector (3-6 Players) -->
+          <div class="bg-white p-3 rounded-3xl border-4 border-darkBlue shadow-pop-blue">
+            <label class="block font-heading font-bold text-darkBlue text-xs mb-1.5">
+              👥 Jumlah Pemain (3-6 Pemain)
+            </label>
+            <div class="grid grid-cols-4 gap-1.5">
+              <button onclick="setPlayerCount(3)" id="btn-count-3" class="btn-count py-1.5 rounded-2xl border-3 border-darkBlue font-heading font-bold text-base bg-warmYellow text-darkBlue shadow-pop-yellow">3</button>
+              <button onclick="setPlayerCount(4)" id="btn-count-4" class="btn-count py-1.5 rounded-2xl border-3 border-darkBlue font-heading font-bold text-base bg-skySoft text-darkBlue">4</button>
+              <button onclick="setPlayerCount(5)" id="btn-count-5" class="btn-count py-1.5 rounded-2xl border-3 border-darkBlue font-heading font-bold text-base bg-skySoft text-darkBlue">5</button>
+              <button onclick="setPlayerCount(6)" id="btn-count-6" class="btn-count py-1.5 rounded-2xl border-3 border-darkBlue font-heading font-bold text-base bg-skySoft text-darkBlue">6</button>
+            </div>
+          </div>
+
+          <!-- 2. Player Names Input -->
+          <div class="bg-white p-3 rounded-3xl border-4 border-darkBlue shadow-pop-blue">
+            <label class="block font-heading font-bold text-darkBlue text-xs mb-1.5">
+              ✏️ Nama Pemain
+            </label>
+            <div id="player-inputs-container" class="space-y-1.5">
+              <!-- Dynamically populated -->
+            </div>
+          </div>
+
+          <!-- 3. Category Selector -->
+          <div class="bg-white p-3 rounded-3xl border-4 border-darkBlue shadow-pop-blue">
+            <label class="block font-heading font-bold text-darkBlue text-xs mb-1.5">
+              📦 Kategori Kata
+            </label>
+            <div class="grid grid-cols-3 gap-1.5">
+              <button onclick="setCategory('benda')" id="cat-benda" class="cat-btn py-1.5 px-1 rounded-2xl border-2 border-darkBlue font-heading font-bold text-[11px] bg-warmYellow text-darkBlue shadow-pop-yellow text-center">
+                📦 Benda
+              </button>
+              <button onclick="setCategory('kegiatan')" id="cat-kegiatan" class="cat-btn py-1.5 px-1 rounded-2xl border-2 border-darkBlue font-heading font-bold text-[11px] bg-skySoft text-darkBlue text-center">
+                🏃 Kegiatan
+              </button>
+              <button onclick="setCategory('hewan')" id="cat-hewan" class="cat-btn py-1.5 px-1 rounded-2xl border-2 border-darkBlue font-heading font-bold text-[11px] bg-skySoft text-darkBlue text-center">
+                🐱 Hewan
+              </button>
+            </div>
+          </div>
+
+          <!-- 4. Impostor Mode Selector -->
+          <div class="bg-white p-3 rounded-3xl border-4 border-darkBlue shadow-pop-blue">
+            <label class="block font-heading font-bold text-darkBlue text-xs mb-1.5">
+              🎭 Mode Impostor
+            </label>
+            <div class="grid grid-cols-2 gap-2">
+              <button onclick="setMode('mrwhite')" id="mode-mrwhite" class="mode-btn p-2 rounded-2xl border-2 border-darkBlue font-heading font-bold text-xs bg-warmYellow text-darkBlue shadow-pop-yellow text-left">
+                <div class="text-xs font-bold">👻 Mr. White</div>
+                <div class="text-[9px] font-semibold text-slate-600 font-quicksand">Tidak dapat kata!</div>
+              </button>
+              <button onclick="setMode('spy')" id="mode-spy" class="mode-btn p-2 rounded-2xl border-2 border-darkBlue font-heading font-bold text-xs bg-skySoft text-darkBlue text-left">
+                <div class="text-xs font-bold">🕵️ Mode Spy</div>
+                <div class="text-[9px] font-semibold text-slate-600 font-quicksand">Dapat kata berbeda!</div>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Start Game Button -->
+        <button onclick="startGame()" class="btn-pop w-full my-3 py-3 rounded-3xl bg-warmYellow border-4 border-darkBlue font-heading font-black text-lg text-darkBlue shadow-pop-yellow tracking-wider uppercase">
+          🚀 MULAI PERMAINAN!
+        </button>
+      </section>
+
+      <!-- SCREEN 2: CARD PASS / PEEK PHASE -->
+      <section id="screen-peek" class="hidden flex-1 flex flex-col justify-between items-center py-1 text-center overflow-y-auto no-scrollbar">
+        <div class="w-full shrink-0">
+          <div class="inline-block px-3 py-1 bg-white border-2 border-darkBlue rounded-full text-[10px] font-bold text-darkBlue shadow-sm mb-1">
+            Giliran Lihat Kartu 🤫
+          </div>
+          <h2 id="peek-player-title" class="font-heading text-xl font-black text-darkBlue leading-tight">
+            Pemain 1
+          </h2>
+          <p class="text-[11px] font-semibold text-slate-600 mt-0.5">
+            Oper HP ke pemain ini. Jangan biarkan pemain lain melihat!
+          </p>
+        </div>
+
+        <!-- Interactive Flip Card Container -->
+        <div class="w-full my-2 flex justify-center items-center shrink-0">
+          <div id="card-element" class="relative w-52 h-64 cursor-pointer perspective-1000">
+            <!-- Card Front / Cover -->
+            <div id="card-front" class="absolute inset-0 w-full h-full rounded-[28px] bg-brandBlue border-4 border-darkBlue shadow-pop-card flex flex-col items-center justify-center p-4 text-white transition-transform duration-500 transform-style-3d">
+              <div class="w-14 h-14 rounded-full bg-white/20 border-2 border-white flex items-center justify-center text-2xl mb-2">
+                ❓
+              </div>
+              <h3 class="font-heading font-bold text-lg mb-1">Kartu Rahasia</h3>
+              <p class="text-[10px] opacity-90 font-medium">Ketuk "Buka Kartu" untuk melihat kata rahasia</p>
+            </div>
+
+            <!-- Card Back / Word Content -->
+            <div id="card-back" class="absolute inset-0 w-full h-full rounded-[28px] bg-creamSoft border-4 border-darkBlue shadow-pop-card flex flex-col items-center justify-center p-4 text-slate-800 transition-transform duration-500 transform-style-3d rotate-y-180 backface-hidden">
+              <span id="role-badge" class="px-2.5 py-0.5 rounded-full border-2 border-darkBlue text-[10px] font-bold font-heading mb-2">
+                Peran Kamu
+              </span>
+              <div id="card-word" class="font-heading font-black text-2xl text-darkBlue my-2 break-words max-w-full">
+                KATA
+              </div>
+              <p id="card-hint" class="text-[10px] font-semibold text-slate-600 px-1">
+                Ingat kata ini dan jangan sampai ketahuan!
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Action Controls -->
+        <div class="w-full space-y-1.5 shrink-0 mb-1">
+          <button id="btn-toggle-card" onclick="toggleCardPeek()" class="btn-pop w-full py-2.5 rounded-2xl bg-warmYellow border-3 border-darkBlue font-heading font-bold text-base text-darkBlue shadow-pop-yellow">
+            👁️ Buka Kartu
+          </button>
+          <button id="btn-next-peek" onclick="nextPeekPlayer()" disabled class="btn-pop w-full py-2.5 rounded-2xl bg-slate-300 border-3 border-slate-500 font-heading font-bold text-base text-slate-600 opacity-60">
+            🔒 Tutup & Lanjut
+          </button>
+        </div>
+      </section>
+
+      <!-- SCREEN 3: DISCUSSION & VOTING PHASE -->
+      <section id="screen-vote" class="hidden flex-1 flex flex-col justify-between overflow-y-auto no-scrollbar">
+        <div>
+          <div class="text-center mb-2">
+            <span class="inline-block px-3 py-0.5 bg-chiliRed text-white border-2 border-darkRed rounded-full text-[10px] font-bold uppercase shadow-sm">
+              Sesi Diskusi & Voting 🗳️
+            </span>
+            <h2 class="font-heading text-lg font-black text-darkBlue mt-1">
+              Siapa yang Mencurigakan?
+            </h2>
+            <p class="text-[11px] font-semibold text-slate-600">
+              Bicarakan dan pilih 1 pemain yang ingin direveal kartunya!
+            </p>
+          </div>
+
+          <!-- Active Players List for Voting -->
+          <div class="space-y-1.5 max-h-[280px] overflow-y-auto no-scrollbar p-1" id="vote-players-list">
+            <!-- Dynamically Rendered Player Vote Cards -->
+          </div>
+        </div>
+
+        <div class="bg-white p-2.5 rounded-2xl border-2 border-darkBlue shadow-sm text-center mt-2">
+          <p class="text-[11px] font-bold text-darkBlue">
+            💡 Tips: Impostor harus pura-pura tahu katanya!
+          </p>
+        </div>
+      </section>
+
+      <!-- SCREEN 4: RESULTS & RECAP -->
+      <section id="screen-result" class="hidden flex-1 flex flex-col justify-between items-center text-center py-2 overflow-y-auto no-scrollbar">
+        <div class="w-full my-auto space-y-3">
+          <div id="result-icon-box" class="w-20 h-20 mx-auto rounded-full bg-warmYellow border-4 border-darkBlue flex items-center justify-center text-4xl shadow-pop-yellow animate-bounce">
+            🏆
+          </div>
+
+          <div>
+            <h2 id="result-title" class="font-heading text-2xl font-black text-darkBlue">
+              PEMAIN MENANG!
+            </h2>
+            <p id="result-subtitle" class="text-xs font-bold text-slate-600 mt-0.5">
+              Impostor berhasil ditemukan!
+            </p>
+          </div>
+
+          <!-- Roles Recap Card -->
+          <div class="bg-white p-3 rounded-2xl border-3 border-darkBlue shadow-pop-blue text-left space-y-2">
+            <h3 class="font-heading font-bold text-darkBlue text-xs border-b-2 border-slate-200 pb-1">
+              📜 Ringkasan Sesi Game:
+            </h3>
+            
+            <div class="space-y-1 text-[11px]">
+              <div class="flex justify-between items-center">
+                <span class="font-bold text-slate-500">Kata Utama (Warga):</span>
+                <span id="recap-main-word" class="font-heading font-bold text-brandBlue text-xs">Apel</span>
+              </div>
+              <div id="recap-spy-row" class="flex justify-between items-center">
+                <span class="font-bold text-slate-500">Kata Impostor/Spy:</span>
+                <span id="recap-spy-word" class="font-heading font-bold text-chiliRed text-xs">Jeruk</span>
+              </div>
+              <div class="flex justify-between items-center">
+                <span class="font-bold text-slate-500">Impostor Adalah:</span>
+                <span id="recap-impostor-name" class="font-heading font-bold text-darkBlue text-xs">Pemain 2</span>
+              </div>
+            </div>
+
+            <!-- Player Status Breakdown -->
+            <div class="pt-1.5 border-t-2 border-slate-100">
+              <div class="text-[10px] font-bold text-slate-400 mb-1">Daftar Pemain & Peran:</div>
+              <div id="recap-player-list" class="space-y-0.5 text-[11px]">
+                <!-- Dynamically populated -->
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="w-full space-y-1.5 mt-2">
+          <button onclick="restartSameGame()" class="btn-pop w-full py-2.5 rounded-2xl bg-warmYellow border-3 border-darkBlue font-heading font-bold text-base text-darkBlue shadow-pop-yellow">
+            🔄 Main Lagi (Kata Baru)
+          </button>
+          <button onclick="resetToSetup()" class="btn-pop w-full py-2 rounded-2xl bg-skySoft border-2 border-darkBlue font-heading font-bold text-xs text-darkBlue">
+            ⚙️ Ubah Pengaturan Pemain
+          </button>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- BACKDROP BLUR MODALS CONTAINER -->
+    <div id="modal-container" class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop hidden">
+      
+      <!-- EXIT CONFIRMATION MODAL -->
+      <div id="modal-exit" class="hidden w-full max-w-[340px] bg-white rounded-[32px] border-[5px] border-d-blue shadow-2xl p-6 text-center relative flex flex-col items-center animate-bounce-gentle">
+        
+        <!-- Red Circle Door Icon -->
+        <div class="w-20 h-20 rounded-full border-[4px] border-h-red bg-red-100 flex items-center justify-center mb-4">
+          <i class="fa-solid fa-right-from-bracket text-h-red text-3xl ml-1"></i>
+        </div>
+
+        <!-- Title & Description -->
+        <h3 id="exit-modal-title" class="text-2xl font-extrabold text-d-blue font-fredoka mb-1">
+          Kembali ke Dashboard?
+        </h3>
+        <p id="exit-modal-desc" class="text-xs font-bold text-slate-500 mb-6">
+          Yakin ingin keluar ke dashboard utama?
+        </p>
+
+        <!-- Two Action Buttons -->
+        <div class="grid grid-cols-2 gap-3 w-full">
+          <button onclick="closeModal()" class="btn-pop-blue py-3 rounded-2xl font-fredoka font-extrabold text-base tracking-wide uppercase">
+            Batal
+          </button>
+          <button onclick="confirmExitAction()" class="btn-pop-red py-3 rounded-2xl font-fredoka font-extrabold text-base tracking-wide uppercase">
+            Ya, Keluar
+          </button>
+        </div>
+      </div>
+
+      <!-- DRAMATIC REVEAL MODAL -->
+      <div id="modal-reveal" class="hidden w-full max-w-[320px] bg-white rounded-3xl border-4 border-darkBlue shadow-pop-blue p-4 text-center animate-pop-in">
+        <div id="reveal-icon" class="w-14 h-14 mx-auto rounded-full border-4 border-darkBlue flex items-center justify-center text-2xl mb-2 shadow-sm">
+          🔍
+        </div>
+        <span id="reveal-badge" class="px-2.5 py-0.5 rounded-full border-2 text-[10px] font-bold font-heading uppercase">
+          Hasil Kartu
+        </span>
+        <h3 id="reveal-name" class="font-heading font-black text-xl text-darkBlue my-1">
+          Nama Pemain
+        </h3>
+        <p id="reveal-role-text" class="text-xs font-extrabold mb-2">
+          ADALAH CITIZEN!
+        </p>
+        <div id="reveal-desc" class="p-2.5 bg-skySoft rounded-xl border-2 border-darkBlue text-[11px] font-semibold text-slate-700 mb-3">
+          Pemain ini tereliminasi dari permainan!
+        </div>
+        <button onclick="continueAfterReveal()" class="btn-pop w-full py-2.5 rounded-xl bg-warmYellow border-3 border-darkBlue font-heading font-bold text-darkBlue text-sm shadow-pop-yellow">
+          Lanjutkan Game ➔
+        </button>
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- JAVASCRIPT GAME LOGIC & AUDIO SYNTHESIZER -->
+  <script>
+    /* =====================================================
+       WORD DATASETS BY CATEGORY
+       ===================================================== */
+    const WORD_DATABASE = {
+      benda: [
+        { main: 'Kulkas', spy: 'Lemari' },
+        { main: 'Sapu', spy: 'Kemoceng' },
+        { main: 'Kipas Angin', spy: 'AC' },
+        { main: 'Cermin', spy: 'Kaca Cembung' },
+        { main: 'Mobil', spy: 'Sepeda Motor' },
+        { main: 'Laptop', spy: 'Komputer' },
+        { main: 'Topi', spy: 'Helm' },
+        { main: 'Kacamata', spy: 'Lensa Kontak' },
+        { main: 'Sepatu', spy: 'Sandal' },
+        { main: 'Kasur', spy: 'Sofa' }
+      ],
+      kegiatan: [
+        { main: 'Mandi', spy: 'Berenang' },
+        { main: 'Memasak', spy: 'Makan' },
+        { main: 'Menulis', spy: 'Membaca' },
+        { main: 'Berlari', spy: 'Berjalan' },
+        { main: 'Menyanyi', spy: 'Menari' },
+        { main: 'Tidur', spy: 'Bermimpi' },
+        { main: 'Mencuci Piring', spy: 'Mengepel' },
+        { main: 'Membeli Baju', spy: 'Fitting Baju' },
+        { main: 'Belajar', spy: 'Ujian' }
+      ],
+      hewan: [
+        { main: 'Kucing', spy: 'Anjing' },
+        { main: 'Harimau', spy: 'Singa' },
+        { main: 'Sapi', spy: 'Kambing' },
+        { main: 'Ayam', spy: 'Bebek' },
+        { main: 'Gajah', spy: 'Jerapah' },
+        { main: 'Ikan Hiu', spy: 'Lumba-lumba' },
+        { main: 'Elang', spy: 'Burung Hantu' },
+        { main: 'Kuda', spy: 'Keledai' }
+      ]
+    };
+
+    /* =====================================================
+       GAME STATE MANAGEMENT
+       ===================================================== */
+    let gameState = {
+      playerCount: 3,
+      playerNames: ['Pemain 1', 'Pemain 2', 'Pemain 3'],
+      category: 'benda',
+      mode: 'mrwhite', // 'mrwhite' or 'spy'
+      currentScreen: 'setup', // 'setup', 'peek', 'vote', 'result'
+      soundEnabled: true,
+      
+      // Active Session Data
+      mainWord: '',
+      spyWord: '',
+      impostorIndex: -1,
+      players: [],
+      currentPeekIndex: 0,
+      cardFlipped: false,
+      lastRevealedPlayer: null
+    };
+
+    /* =====================================================
+       WEB AUDIO API SYNTHESIZER
+       ===================================================== */
+    const AudioFX = {
+      ctx: null,
+      
+      init() {
+        if (!this.ctx) {
+          const AudioContext = window.AudioContext || window.webkitAudioContext;
+          if (AudioContext) {
+            this.ctx = new AudioContext();
+          }
+        }
+        if (this.ctx && this.ctx.state === 'suspended') {
+          this.ctx.resume();
+        }
+      },
+
+      playClick() {
+        if (!gameState.soundEnabled) return;
+        this.init();
+        if (!this.ctx) return;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(400, this.ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(800, this.ctx.currentTime + 0.08);
+        gain.gain.setValueAtTime(0.2, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.08);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start();
+        osc.stop(this.ctx.currentTime + 0.08);
+      },
+
+      playFlip() {
+        if (!gameState.soundEnabled) return;
+        this.init();
+        if (!this.ctx) return;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(200, this.ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(500, this.ctx.currentTime + 0.15);
+        gain.gain.setValueAtTime(0.15, this.ctx.currentTime);
+        gain.gain.linearRampToValueAtTime(0.01, this.ctx.currentTime + 0.15);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start();
+        osc.stop(this.ctx.currentTime + 0.15);
+      },
+
+      playSadBoom() {
+        if (!gameState.soundEnabled) return;
+        this.init();
+        if (!this.ctx) return;
+        
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(150, this.ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(40, this.ctx.currentTime + 0.4);
+        gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.4);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start();
+        osc.stop(this.ctx.currentTime + 0.4);
+      },
+
+      playVictory() {
+        if (!gameState.soundEnabled) return;
+        this.init();
+        if (!this.ctx) return;
+
+        const notes = [261.63, 329.63, 392.00, 523.25];
+        notes.forEach((freq, idx) => {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(freq, this.ctx.currentTime + idx * 0.1);
+          gain.gain.setValueAtTime(0.2, this.ctx.currentTime + idx * 0.1);
+          gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + idx * 0.1 + 0.3);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(this.ctx.currentTime + idx * 0.1);
+          osc.stop(this.ctx.currentTime + idx * 0.1 + 0.3);
+        });
+      }
+    };
+
+    function toggleSound() {
+      gameState.soundEnabled = !gameState.soundEnabled;
+      const soundIcon = document.getElementById('soundIcon');
+      soundIcon.className = gameState.soundEnabled ? 'fa-solid fa-volume-high' : 'fa-solid fa-volume-xmark text-h-red';
+    }
+
+    /* =====================================================
+       DOM INIT & SETUP HANDLERS
+       ===================================================== */
+    window.addEventListener('DOMContentLoaded', () => {
+      renderPlayerInputs();
+    });
+
+    function setPlayerCount(count) {
+      AudioFX.playClick();
+      gameState.playerCount = count;
+      
+      for (let i = 3; i <= 6; i++) {
+        const btn = document.getElementById(`btn-count-${i}`);
+        if (i === count) {
+          btn.className = "btn-count py-1.5 rounded-2xl border-3 border-darkBlue font-heading font-bold text-base bg-warmYellow text-darkBlue shadow-pop-yellow";
+        } else {
+          btn.className = "btn-count py-1.5 rounded-2xl border-3 border-darkBlue font-heading font-bold text-base bg-skySoft text-darkBlue";
+        }
+      }
+
+      while (gameState.playerNames.length < count) {
+        gameState.playerNames.push(`Pemain ${gameState.playerNames.length + 1}`);
+      }
+      if (gameState.playerNames.length > count) {
+        gameState.playerNames = gameState.playerNames.slice(0, count);
+      }
+
+      renderPlayerInputs();
+    }
+
+    function renderPlayerInputs() {
+      const container = document.getElementById('player-inputs-container');
+      container.innerHTML = '';
+
+      for (let i = 0; i < gameState.playerCount; i++) {
+        const div = document.createElement('div');
+        div.className = 'flex items-center gap-2';
+        div.innerHTML = `
+          <span class="font-heading font-bold text-xs text-darkBlue w-16">Pemain ${i + 1}:</span>
+          <input type="text" value="${gameState.playerNames[i] || 'Pemain ' + (i+1)}" 
+            onchange="updatePlayerName(${i}, this.value)"
+            maxlength="12"
+            class="flex-1 px-3 py-1 rounded-xl border-2 border-darkBlue font-bold text-xs bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brandBlue" />
+        `;
+        container.appendChild(div);
+      }
+    }
+
+    function updatePlayerName(index, val) {
+      const trimmed = val.trim();
+      gameState.playerNames[index] = trimmed !== '' ? trimmed : `Pemain ${index + 1}`;
+    }
+
+    function setCategory(cat) {
+      AudioFX.playClick();
+      gameState.category = cat;
+      const categories = ['benda', 'kegiatan', 'hewan'];
+      categories.forEach(c => {
+        const btn = document.getElementById(`cat-${c}`);
+        if (c === cat) {
+          btn.className = "cat-btn py-1.5 px-1 rounded-2xl border-2 border-darkBlue font-heading font-bold text-[11px] bg-warmYellow text-darkBlue shadow-pop-yellow text-center";
+        } else {
+          btn.className = "cat-btn py-1.5 px-1 rounded-2xl border-2 border-darkBlue font-heading font-bold text-[11px] bg-skySoft text-darkBlue text-center";
+        }
+      });
+    }
+
+    function setMode(mode) {
+      AudioFX.playClick();
+      gameState.mode = mode;
+      const modes = ['mrwhite', 'spy'];
+      modes.forEach(m => {
+        const btn = document.getElementById(`mode-${m}`);
+        if (m === mode) {
+          btn.className = "mode-btn p-2 rounded-2xl border-2 border-darkBlue font-heading font-bold text-xs bg-warmYellow text-darkBlue shadow-pop-yellow text-left";
+        } else {
+          btn.className = "mode-btn p-2 rounded-2xl border-2 border-darkBlue font-heading font-bold text-xs bg-skySoft text-darkBlue text-left";
+        }
+      });
+    }
+
+    /* =====================================================
+       GAMEPLAY LOGIC FLOW
+       ===================================================== */
+    function startGame() {
+      AudioFX.playClick();
+
+      const categoryWords = WORD_DATABASE[gameState.category];
+      const selectedPair = categoryWords[Math.floor(Math.random() * categoryWords.length)];
+      
+      gameState.mainWord = selectedPair.main;
+      gameState.spyWord = selectedPair.spy;
+
+      gameState.impostorIndex = Math.floor(Math.random() * gameState.playerCount);
+
+      gameState.players = gameState.playerNames.map((name, idx) => {
+        const isImpostor = idx === gameState.impostorIndex;
+        let word = gameState.mainWord;
+        
+        if (isImpostor) {
+          word = gameState.mode === 'mrwhite' ? '? ? ?' : gameState.spyWord;
+        }
+
+        return {
+          id: idx,
+          name: name,
+          isImpostor: isImpostor,
+          word: word,
+          isAlive: true
+        };
+      });
+
+      gameState.currentPeekIndex = 0;
+      gameState.cardFlipped = false;
+      
+      switchScreen('peek');
+      setupPeekCardUI();
+    }
+
+    /* PEEK PHASE */
+    function setupPeekCardUI() {
+      const player = gameState.players[gameState.currentPeekIndex];
+      document.getElementById('peek-player-title').innerText = player.name;
+      
+      gameState.cardFlipped = false;
+      const front = document.getElementById('card-front');
+      const back = document.getElementById('card-back');
+      front.classList.remove('rotate-y-180');
+      back.classList.add('rotate-y-180');
+
+      const roleBadge = document.getElementById('role-badge');
+      const cardWord = document.getElementById('card-word');
+      const cardHint = document.getElementById('card-hint');
+
+      if (player.isImpostor) {
+        if (gameState.mode === 'mrwhite') {
+          roleBadge.innerText = '👻 Kamu: Mr. White';
+          roleBadge.className = 'px-2.5 py-0.5 rounded-full border-2 border-darkRed bg-chiliRed text-white text-[10px] font-bold font-heading mb-2';
+          cardWord.innerText = '? ? ?';
+          cardHint.innerText = 'Kamu TIDAK mendapat kata! Sembunyikan identitasmu & berpura-puralah tahu!';
+        } else {
+          roleBadge.innerText = '🕵️ Kamu: SPY';
+          roleBadge.className = 'px-2.5 py-0.5 rounded-full border-2 border-darkYellow bg-warmYellow text-darkBlue text-[10px] font-bold font-heading mb-2';
+          cardWord.innerText = player.word;
+          cardHint.innerText = 'Kata kamu berbeda dari pemain lain! Jangan sampai ketahuan!';
+        }
+      } else {
+        roleBadge.innerText = '👥 Kamu: Warga Biasa';
+        roleBadge.className = 'px-2.5 py-0.5 rounded-full border-2 border-darkBlue bg-skySoft text-darkBlue text-[10px] font-bold font-heading mb-2';
+        cardWord.innerText = player.word;
+        cardHint.innerText = 'Ingat kata ini baik-baik untuk diskusi nanti!';
+      }
+
+      const btnToggle = document.getElementById('btn-toggle-card');
+      const btnNext = document.getElementById('btn-next-peek');
+
+      btnToggle.innerText = '👁️ Buka Kartu';
+      btnNext.disabled = true;
+      btnNext.className = "btn-pop w-full py-2.5 rounded-2xl bg-slate-300 border-3 border-slate-500 font-heading font-bold text-base text-slate-600 opacity-60";
+    }
+
+    function toggleCardPeek() {
+      AudioFX.playFlip();
+      gameState.cardFlipped = !gameState.cardFlipped;
+
+      const front = document.getElementById('card-front');
+      const back = document.getElementById('card-back');
+      const btnToggle = document.getElementById('btn-toggle-card');
+      const btnNext = document.getElementById('btn-next-peek');
+
+      if (gameState.cardFlipped) {
+        front.classList.add('rotate-y-180');
+        back.classList.remove('rotate-y-180');
+        btnToggle.innerText = '🙈 Sembunyikan Kartu';
+
+        btnNext.disabled = false;
+        btnNext.className = "btn-pop w-full py-2.5 rounded-2xl bg-warmYellow border-3 border-darkBlue font-heading font-bold text-base text-darkBlue shadow-pop-yellow";
+      } else {
+        front.classList.remove('rotate-y-180');
+        back.classList.add('rotate-y-180');
+        btnToggle.innerText = '👁️ Buka Kartu';
+      }
+    }
+
+    function nextPeekPlayer() {
+      AudioFX.playClick();
+      gameState.currentPeekIndex++;
+
+      if (gameState.currentPeekIndex < gameState.playerCount) {
+        setupPeekCardUI();
+      } else {
+        switchScreen('vote');
+        renderVotePlayersList();
+      }
+    }
+
+    /* VOTING PHASE */
+    function renderVotePlayersList() {
+      const list = document.getElementById('vote-players-list');
+      list.innerHTML = '';
+
+      gameState.players.forEach(player => {
+        if (!player.isAlive) return;
+
+        const div = document.createElement('div');
+        div.className = 'flex items-center justify-between p-2.5 bg-white rounded-2xl border-3 border-darkBlue shadow-sm';
+        div.innerHTML = `
+          <div class="flex items-center gap-2">
+            <div class="w-7 h-7 rounded-full bg-skySoft border-2 border-darkBlue flex items-center justify-center font-heading font-bold text-darkBlue text-xs">
+              👤
+            </div>
+            <span class="font-heading font-bold text-darkBlue text-xs">${player.name}</span>
+          </div>
+          <button onclick="accusePlayer(${player.id})" class="btn-pop px-3 py-1.5 rounded-xl bg-chiliRed border-2 border-darkRed font-heading font-bold text-white text-[11px] shadow-pop-red">
+            VOTE & REVEAL 🔍
+          </button>
+        `;
+        list.appendChild(div);
+      });
+    }
+
+    function accusePlayer(playerId) {
+      AudioFX.playClick();
+      const target = gameState.players.find(p => p.id === playerId);
+      gameState.lastRevealedPlayer = target;
+
+      const modal = document.getElementById('modal-container');
+      const revealModal = document.getElementById('modal-reveal');
+      const exitModal = document.getElementById('modal-exit');
+
+      exitModal.classList.add('hidden');
+      revealModal.classList.remove('hidden');
+      modal.classList.remove('hidden');
+
+      const icon = document.getElementById('reveal-icon');
+      const badge = document.getElementById('reveal-badge');
+      const name = document.getElementById('reveal-name');
+      const roleText = document.getElementById('reveal-role-text');
+      const desc = document.getElementById('reveal-desc');
+
+      name.innerText = target.name;
+
+      if (target.isImpostor) {
+        AudioFX.playVictory();
+        triggerConfetti();
+
+        icon.className = 'w-14 h-14 mx-auto rounded-full bg-emerald-100 border-4 border-emerald-600 text-emerald-600 flex items-center justify-center text-2xl mb-2 shadow-sm';
+        icon.innerText = '🎉';
+        badge.innerText = 'TERBONGKAR!';
+        badge.className = 'px-2.5 py-0.5 rounded-full border-2 border-emerald-600 bg-emerald-100 text-emerald-700 text-[10px] font-bold font-heading uppercase';
+        roleText.innerText = target.isImpostor && gameState.mode === 'mrwhite' ? 'ADALAH MR. WHITE!' : 'ADALAH SPY!';
+        roleText.className = 'text-xs font-extrabold text-emerald-600 mb-2';
+        desc.innerText = `Selamat! ${target.name} adalah Impostor yang dicari! Warga Biasa Menang!`;
+      } else {
+        AudioFX.playSadBoom();
+
+        icon.className = 'w-14 h-14 mx-auto rounded-full bg-chiliRed/10 border-4 border-chiliRed text-chiliRed flex items-center justify-center text-2xl mb-2 shadow-sm';
+        icon.innerText = '💥';
+        badge.innerText = 'SALAH TEBAK!';
+        badge.className = 'px-2.5 py-0.5 rounded-full border-2 border-darkRed bg-chiliRed text-white text-[10px] font-bold font-heading uppercase';
+        roleText.innerText = 'ADALAH WARGA BIASA!';
+        roleText.className = 'text-xs font-extrabold text-chiliRed mb-2';
+        desc.innerText = `Aduh! ${target.name} bukan Impostor dan tereliminasi dari ronde ini!`;
+      }
+    }
+
+    function continueAfterReveal() {
+      AudioFX.playClick();
+      closeModal();
+
+      const revealedPlayer = gameState.lastRevealedPlayer;
+
+      if (revealedPlayer.isImpostor) {
+        showResultScreen(true);
+      } else {
+        revealedPlayer.isAlive = false;
+
+        const aliveCitizens = gameState.players.filter(p => p.isAlive && !p.isImpostor);
+
+        if (aliveCitizens.length <= 1) {
+          showResultScreen(false);
+        } else {
+          renderVotePlayersList();
+        }
+      }
+    }
+
+    /* RESULT SCREEN */
+    function showResultScreen(citizensWon) {
+      switchScreen('result');
+
+      const iconBox = document.getElementById('result-icon-box');
+      const title = document.getElementById('result-title');
+      const subtitle = document.getElementById('result-subtitle');
+
+      const impostor = gameState.players.find(p => p.isImpostor);
+
+      if (citizensWon) {
+        iconBox.innerText = '🏆';
+        title.innerText = 'WARGA MENANG!';
+        subtitle.innerText = `Impostor (${impostor.name}) berhasil dibongkar!`;
+      } else {
+        AudioFX.playSadBoom();
+        iconBox.innerText = '🎭';
+        title.innerText = 'IMPOSTOR MENANG!';
+        subtitle.innerText = `${impostor.name} berhasil mengecoh semua warga!`;
+      }
+
+      document.getElementById('recap-main-word').innerText = gameState.mainWord;
+      
+      const spyWord = document.getElementById('recap-spy-word');
+
+      if (gameState.mode === 'mrwhite') {
+        spyWord.innerText = '? ? ? (Tanpa Kata)';
+      } else {
+        spyWord.innerText = gameState.spyWord;
+      }
+
+      document.getElementById('recap-impostor-name').innerText = impostor.name;
+
+      const recapList = document.getElementById('recap-player-list');
+      recapList.innerHTML = '';
+
+      gameState.players.forEach(p => {
+        const item = document.createElement('div');
+        item.className = 'flex justify-between items-center text-slate-700 font-semibold';
+        
+        let roleBadgeStr = p.isImpostor 
+          ? (gameState.mode === 'mrwhite' ? '👻 Mr. White' : '🕵️ Spy')
+          : '👥 Warga';
+
+        item.innerHTML = `
+          <span>${p.name} (${roleBadgeStr}):</span>
+          <span class="font-bold text-darkBlue">${p.word}</span>
+        `;
+        recapList.appendChild(item);
+      });
+    }
+
+    function restartSameGame() {
+      startGame();
+    }
+
+    function resetToSetup() {
+      switchScreen('setup');
+    }
+
+    /* =====================================================
+       TWO-TIER EXIT / NAVIGATION SYSTEM
+       ===================================================== */
+    function handleExitClick() {
+      AudioFX.playClick();
+      const modal = document.getElementById('modal-container');
+      const exitModal = document.getElementById('modal-exit');
+      const revealModal = document.getElementById('modal-reveal');
+
+      revealModal.classList.add('hidden');
+      exitModal.classList.remove('hidden');
+      modal.classList.remove('hidden');
+
+      const title = document.getElementById('exit-modal-title');
+      const desc = document.getElementById('exit-modal-desc');
+
+      if (gameState.currentScreen === 'setup') {
+        title.innerText = 'Kembali ke Dashboard?';
+        desc.innerText = 'Yakin ingin keluar ke dashboard utama?';
+      } else {
+        title.innerText = 'Batalkan Permainan?';
+        desc.innerText = 'Yakin ingin membatalkan sesi game saat ini?';
+      }
+    }
+
+    function confirmExitAction() {
+      AudioFX.playClick();
+      closeModal();
+
+      if (gameState.currentScreen === 'setup') {
+        window.location.href = 'index.html';
+      } else {
+        switchScreen('setup');
+      }
+    }
+
+    function closeModal() {
+      document.getElementById('modal-container').classList.add('hidden');
+    }
+
+    function switchScreen(screenName) {
+      gameState.currentScreen = screenName;
+      const screens = ['setup', 'peek', 'vote', 'result'];
+      
+      screens.forEach(s => {
+        const el = document.getElementById(`screen-${s}`);
+        if (s === screenName) {
+          el.classList.remove('hidden');
+        } else {
+          el.classList.add('hidden');
+        }
+      });
+    }
+
+    function triggerConfetti() {
+      if (typeof confetti === 'function') {
+        confetti({
+          particleCount: 70,
+          spread: 60,
+          origin: { y: 0.6 }
+        });
+      }
+    }
+  </script>
+
+</body>
+</html>

@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="id" class="h-full w-full overflow-hidden select-none">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>SITMET.ea - Arcade Web Games</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Google Fonts: Fredoka & Quicksand -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Quicksand:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            fredoka: ['Fredoka', 'sans-serif'],
+            quicksand: ['Quicksand', 'sans-serif'],
+          },
+          colors: {
+            gameBlue: '#3B82F6',
+            gameDarkBlue: '#1D4ED8',
+            gameYellow: '#FACC15',
+            gameDarkYellow: '#CA8A04',
+            gameRed: '#EF4444',
+            gameBg: '#EFF6FF',
+          },
+          boxShadow: {
+            'pop': '0px 6px 0px 0px #1D4ED8',
+            'pop-sm': '0px 3px 0px 0px #1D4ED8',
+            'pop-yellow': '0px 6px 0px 0px #CA8A04',
+            'pop-yellow-sm': '0px 3px 0px 0px #CA8A04',
+            'pop-red': '0px 5px 0px 0px #991B1B',
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body {
+      font-family: 'Quicksand', sans-serif;
+      touch-action: manipulation;
+      height: 100dvh;
+      width: 100vw;
+      overflow: hidden;
+      background-color: #EFF6FF;
+    }
+
+    .font-cartoon {
+      font-family: 'Fredoka', sans-serif;
+    }
+    
+    .cartoon-border {
+      border: 3px solid #1D4ED8;
+    }
+    
+    .cartoon-border-sm {
+      border: 2px solid #1D4ED8;
+    }
+
+    .btn-pop {
+      transition: all 0.1s ease;
+    }
+
+    .btn-pop:active {
+      transform: translateY(4px);
+      box-shadow: 0px 1px 0px 0px transparent !important;
+    }
+
+    @keyframes bounce-slow {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-8px); }
+    }
+
+    .animate-bounce-slow {
+      animation: bounce-slow 2.5s infinite ease-in-out;
+    }
+
+    .modal-backdrop {
+      background-color: rgba(15, 23, 42, 0.7);
+      backdrop-filter: blur(5px);
+    }
+  </style>
+</head>
+<body class="flex flex-col justify-between items-center text-slate-800 p-3 max-w-md mx-auto relative h-full">
+
+  <!-- TOP HEADER APP BAR -->
+  <header class="w-full bg-gameBlue text-white rounded-2xl p-2.5 px-4 flex justify-between items-center cartoon-border shadow-pop flex-shrink-0 z-20">
+    <div class="flex items-center gap-2">
+      <span class="text-xl">🎮</span>
+      <h1 class="font-cartoon text-lg font-bold tracking-wider text-gameYellow">SITMET.ea</h1>
+    </div>
+    
+    <!-- Action Buttons (Info/Developer & Sound) -->
+    <div class="flex items-center gap-2">
+      <button onclick="openInfoModal()" title="Info & Pengembang" class="p-1.5 px-2.5 bg-blue-600 rounded-xl border-2 border-blue-300 active:scale-95 text-xs font-bold hover:bg-blue-500 transition-all flex items-center gap-1">
+        <span>📢</span>
+      </button>
+      <button id="soundToggleBtn" onclick="toggleSound()" class="p-1.5 px-2 bg-blue-600 rounded-xl border-2 border-blue-300 active:scale-95 text-xs font-bold hover:bg-blue-500 transition-all">
+        🔊
+      </button>
+    </div>
+  </header>
+
+  <!-- ================= 1. WELCOME SCREEN ================= -->
+  <main id="welcomeScreen" class="w-full flex-1 flex flex-col justify-between items-center my-3 overflow-hidden z-10">
+    
+    <!-- Hero Branding -->
+    <div class="my-auto text-center flex flex-col items-center px-4">
+      <div class="w-24 h-24 bg-gameYellow rounded-3xl cartoon-border flex items-center justify-center text-5xl shadow-pop mb-4 animate-bounce-slow">
+        🕹️
+      </div>
+      <h1 class="font-cartoon text-4xl font-black text-gameDarkBlue tracking-wider mb-1">
+        SITMET<span class="text-gameYellow">.ea</span>
+      </h1>
+      <p class="text-xs font-bold text-slate-600 px-6">
+        Kumpulan mini game seru dan imut untuk dimainkan bareng teman-teman sebangkumu!
+      </p>
+    </div>
+
+    <!-- Start Button -->
+    <button onclick="goToGameCatalog()" class="btn-pop w-full bg-gameYellow hover:bg-yellow-300 text-gameDarkBlue font-cartoon font-black text-xl py-4 rounded-2xl cartoon-border shadow-pop-yellow flex items-center justify-center gap-2 uppercase tracking-wide flex-shrink-0 mb-2">
+      <span>🚀</span> MULAI GAME
+    </button>
+  </main>
+
+  <!-- ================= 2. GAME CATALOG SCREEN (4 GAMES) ================= -->
+  <main id="catalogScreen" class="w-full flex-1 flex-col justify-between items-center my-2 hidden overflow-hidden z-10">
+    
+    <!-- Catalog Header -->
+    <div class="w-full text-center my-1">
+      <span class="text-[10px] font-black uppercase text-blue-600 tracking-widest bg-blue-100 px-3 py-1 rounded-full border border-blue-200">
+        PILIH GAME FAVORITMU
+      </span>
+    </div>
+
+    <!-- 2x2 Grid Game Cards -->
+    <div class="w-full flex-1 grid grid-cols-2 gap-3 my-2 items-center">
+      
+      <!-- GAME 1 CARD -->
+      <button onclick="openRulesModal(1)" class="btn-pop bg-white rounded-2xl p-2.5 cartoon-border shadow-pop flex flex-col items-center justify-between h-full hover:bg-blue-50">
+        <div class="w-full flex-1 rounded-xl bg-gradient-to-br from-blue-400 to-indigo-500 cartoon-border-sm flex items-center justify-center text-4xl shadow-inner relative overflow-hidden">
+          <span class="z-10">🎨</span>
+          <div class="absolute inset-0 bg-white/10 backdrop-blur-[1px]"></div>
+        </div>
+        <span class="font-cartoon text-xs font-black text-gameDarkBlue mt-2 uppercase tracking-wide text-center">
+          COLOR HUNT
+        </span>
+      </button>
+
+      <!-- GAME 2 CARD -->
+      <button onclick="openRulesModal(2)" class="btn-pop bg-white rounded-2xl p-2.5 cartoon-border shadow-pop flex flex-col items-center justify-between h-full hover:bg-yellow-50">
+        <div class="w-full flex-1 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 cartoon-border-sm flex items-center justify-center text-4xl shadow-inner relative overflow-hidden">
+          <span class="z-10">💣</span>
+          <div class="absolute inset-0 bg-white/10 backdrop-blur-[1px]"></div>
+        </div>
+        <span class="font-cartoon text-xs font-black text-gameDarkBlue mt-2 uppercase tracking-wide text-center">
+          BoomMath!
+        </span>
+      </button>
+
+      <!-- GAME 3 CARD -->
+      <button onclick="openRulesModal(3)" class="btn-pop bg-white rounded-2xl p-2.5 cartoon-border shadow-pop flex flex-col items-center justify-between h-full hover:bg-emerald-50">
+        <div class="w-full flex-1 rounded-xl bg-gradient-to-br from-emerald-400 to-teal-600 cartoon-border-sm flex items-center justify-center text-4xl shadow-inner relative overflow-hidden">
+          <span class="z-10">🔎</span>
+          <div class="absolute inset-0 bg-white/10 backdrop-blur-[1px]"></div>
+        </div>
+        <span class="font-cartoon text-xs font-black text-gameDarkBlue mt-2 uppercase tracking-wide text-center">
+          Odd One Out: Words
+        </span>
+      </button>
+
+      <!-- GAME 4 CARD -->
+      <button onclick="openRulesModal(4)" class="btn-pop bg-white rounded-2xl p-2.5 cartoon-border shadow-pop flex flex-col items-center justify-between h-full hover:bg-purple-50">
+        <div class="w-full flex-1 rounded-xl bg-gradient-to-br from-purple-400 to-pink-500 cartoon-border-sm flex items-center justify-center text-4xl shadow-inner relative overflow-hidden">
+          <span class="z-10">🧠</span>
+          <div class="absolute inset-0 bg-white/10 backdrop-blur-[1px]"></div>
+        </div>
+        <span class="font-cartoon text-xs font-black text-gameDarkBlue mt-2 uppercase tracking-wide text-center">
+          Coming Soon
+        </span>
+      </button>
+
+    </div>
+
+    <!-- Back to Welcome Button -->
+    <button onclick="goToWelcomeScreen()" class="btn-pop w-full bg-slate-200 hover:bg-slate-300 text-slate-700 font-cartoon font-bold text-sm py-2 rounded-xl cartoon-border shadow-pop-sm flex justify-center items-center gap-1">
+      ⬅️ KEMBALI
+    </button>
+  </main>
+
+  <!-- ================= 3. POP-UP MODAL: INFO & PENGEMBANG ================= -->
+  <div id="infoModal" class="fixed inset-0 modal-backdrop flex items-center justify-center p-4 z-50 hidden">
+    <div class="bg-white w-full max-w-xs rounded-3xl p-4 cartoon-border shadow-pop text-center flex flex-col items-center relative animate-pop-in">
+      
+      <!-- Close Button (X / Silang) -->
+      <button onclick="closeInfoModal()" class="absolute -top-3 -right-3 w-9 h-9 bg-gameRed text-white font-cartoon font-black rounded-full cartoon-border-sm shadow-pop-red flex items-center justify-center text-sm active:scale-90">
+        ✕
+      </button>
+
+      <!-- Avatar Icon -->
+      <div class="w-16 h-16 rounded-2xl bg-gameYellow cartoon-border flex items-center justify-center text-3xl shadow-sm mb-2 mt-1">
+        👩‍💻
+      </div>
+
+      <!-- Title -->
+      <h3 class="font-cartoon text-xl font-black text-gameDarkBlue uppercase tracking-wide">
+        Tentang Pengembang
+      </h3>
+      <span class="text-[11px] font-bold text-slate-400 mb-2">SITMET.ea Arcade Games</span>
+
+      <!-- Dev Details Card -->
+      <div class="w-full bg-blue-50 border-2 border-blue-200 rounded-2xl p-3 text-left space-y-2 mb-3">
+        <div class="flex items-center gap-2">
+          <span class="text-sm">✨</span>
+          <div>
+            <span class="text-[10px] font-extrabold text-slate-400 block uppercase leading-none">Dibuat oleh</span>
+            <span class="font-cartoon text-sm text-gameDarkBlue font-bold">Amadea (2026)</span>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2 border-t border-blue-100 pt-2">
+          <i class="fa-brands fa-instagram text-pink-500 text-base w-4 text-center"></i>
+          <a href="https://instagram.com/amadeaantikorosi" target="_blank" class="text-xs font-bold text-blue-600 hover:underline">
+            @amadeaantikorosi
+          </a>
+        </div>
+
+        <div class="flex items-center gap-2 border-t border-blue-100 pt-2">
+          <i class="fa-solid fa-envelope text-gameYellow text-base w-4 text-center"></i>
+          <a href="mailto:sitmetku@gmail.com" class="text-xs font-bold text-blue-600 hover:underline">
+            sitmetku@gmail.com
+          </a>
+        </div>
+      </div>
+
+      <!-- Feedback Callout -->
+      <a href="mailto:sitmetku@gmail.com?subject=Feedback%20SITMET.ea" class="btn-pop w-full bg-gameYellow hover:bg-yellow-300 text-gameDarkBlue font-cartoon font-black text-sm py-2.5 rounded-2xl cartoon-border shadow-pop-yellow uppercase tracking-wide flex items-center justify-center gap-2">
+        <span>💬</span> Kirim Feedback
+      </a>
+    </div>
+  </div>
+
+  <!-- ================= 4. POP-UP MODAL: CARA BERMAIN ================= -->
+  <div id="rulesModal" class="fixed inset-0 modal-backdrop flex items-center justify-center p-4 z-50 hidden">
+    <div class="bg-white w-full max-w-xs rounded-3xl p-4 cartoon-border shadow-pop text-center flex flex-col items-center relative animate-pop-in">
+      
+      <!-- Close Button (X / Silang) -->
+      <button onclick="closeRulesModal()" class="absolute -top-3 -right-3 w-9 h-9 bg-gameRed text-white font-cartoon font-black rounded-full cartoon-border-sm shadow-pop-red flex items-center justify-center text-sm active:scale-90">
+        ✕
+      </button>
+
+      <!-- Modal Game Icon -->
+      <div id="modalIconBox" class="w-16 h-16 rounded-2xl cartoon-border flex items-center justify-center text-3xl shadow-sm mb-2 mt-1">
+        🎨
+      </div>
+
+      <!-- Modal Game Title -->
+      <h3 id="modalGameTitle" class="font-cartoon text-xl font-black text-gameDarkBlue uppercase tracking-wide">
+        NAMA GAME
+      </h3>
+
+      <!-- Rules Box -->
+      <div class="w-full bg-blue-50 border-2 border-blue-200 rounded-2xl p-3 my-3 text-left">
+        <span class="font-cartoon text-xs font-bold text-gameDarkBlue block mb-1">
+          📜 Cara Bermain:
+        </span>
+        <p id="modalGameDescription" class="text-xs font-bold text-slate-600 leading-relaxed">
+          Instruksi dan cara bermain akan muncul di sini.
+        </p>
+      </div>
+
+      <!-- Confirm Understand Button -->
+      <button onclick="launchGame()" class="btn-pop w-full bg-gameYellow hover:bg-yellow-300 text-gameDarkBlue font-cartoon font-black text-base py-3 rounded-2xl cartoon-border shadow-pop-yellow uppercase tracking-wide">
+        👍 MENGERTI
+      </button>
+    </div>
+  </div>
+
+  <!-- JAVASCRIPT LOGIC -->
+  <script>
+    // Audio State
+    let isSoundEnabled = true;
+    let audioCtx = null;
+
+    function initAudio() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+    }
+
+    function playPopSound() {
+      if (!isSoundEnabled) return;
+      initAudio();
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(400, audioCtx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(800, audioCtx.currentTime + 0.08);
+      gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.08);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.08);
+    }
+
+    function toggleSound() {
+      isSoundEnabled = !isSoundEnabled;
+      document.getElementById('soundToggleBtn').innerText = isSoundEnabled ? '🔊' : '🔇';
+    }
+
+    // INFO / DEVELOPER MODAL LOGIC
+    function openInfoModal() {
+      playPopSound();
+      document.getElementById('infoModal').classList.remove('hidden');
+    }
+
+    function closeInfoModal() {
+      playPopSound();
+      document.getElementById('infoModal').classList.add('hidden');
+    }
+
+    // GAME DATA CONFIGURATION
+    const GAMES_DATA = {
+      1: {
+        title: "COLOR HUNT",
+        fileUrl: "colorhunt.html",
+        icon: "🎨",
+        bgClass: "bg-gradient-to-br from-blue-400 to-indigo-500",
+        description: "Cari benda di sekitarmu yang warnanya paling mirip dengan target waktu! Lalu scan bergantian untuk dihitung akurasi kemiripannya oleh AI."
+      },
+      2: {
+        title: "BoomMath!",
+        fileUrl: "boommath.html",
+        icon: "💣",
+        bgClass: "bg-gradient-to-br from-amber-400 to-orange-500",
+        description: "Jawab pertanyaan yang muncul lalu berikan pada teman sebelahmu setiap kamu berhasil menjawabnya. Siapa yang memegang bom terakhir, dia yang akan kalah."
+      },
+      3: {
+        title: "Odd One Out: Words",
+        fileUrl: "impostor.html",
+        icon: "🔎",
+        bgClass: "bg-gradient-to-br from-emerald-400 to-teal-600",
+        description: "Kamu akan mendapatkan sebuah kata/tidak sama sekali. kamu harus mendeskripsikan kata yang kamu dapat. Tuduh yang paling mencurigakan"
+      },
+      4: {
+        title: "Coming Soon",
+        fileUrl: "quiz_dash.html",
+        icon: "🧠",
+        bgClass: "bg-gradient-to-br from-purple-400 to-pink-500",
+        description: "Jawab pertanyaan kuis seru bersama-sama dan kumpulkan poin terbanyak untuk jadi juara!"
+      }
+    };
+
+    let selectedGameId = null;
+
+    // NAVIGATION FUNCTIONS
+    function goToGameCatalog() {
+      playPopSound();
+      document.getElementById('welcomeScreen').classList.add('hidden');
+      document.getElementById('catalogScreen').classList.remove('hidden');
+      document.getElementById('catalogScreen').classList.add('flex');
+    }
+
+    function goToWelcomeScreen() {
+      playPopSound();
+      document.getElementById('catalogScreen').classList.add('hidden');
+      document.getElementById('catalogScreen').classList.remove('flex');
+      document.getElementById('welcomeScreen').classList.remove('hidden');
+    }
+
+    // MODAL FUNCTIONS
+    function openRulesModal(gameId) {
+      playPopSound();
+      selectedGameId = gameId;
+      const game = GAMES_DATA[gameId];
+
+      document.getElementById('modalGameTitle').innerText = game.title;
+      document.getElementById('modalGameDescription').innerText = game.description;
+      
+      const iconBox = document.getElementById('modalIconBox');
+      iconBox.className = `w-16 h-16 rounded-2xl cartoon-border flex items-center justify-center text-3xl shadow-sm mb-2 mt-1 text-white ${game.bgClass}`;
+      iconBox.innerText = game.icon;
+
+      document.getElementById('rulesModal').classList.remove('hidden');
+    }
+
+    function closeRulesModal() {
+      playPopSound();
+      document.getElementById('rulesModal').classList.add('hidden');
+      selectedGameId = null;
+    }
+
+    function launchGame() {
+      playPopSound();
+      if (selectedGameId && GAMES_DATA[selectedGameId]) {
+        const file = GAMES_DATA[selectedGameId].fileUrl;
+        window.location.href = file;
+      }
+    }
+  </script>
+</body>
+</html>

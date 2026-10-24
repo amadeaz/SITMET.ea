@@ -1,0 +1,943 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>BoomMath! - Game Bom Matematika</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome 6 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts: Fredoka & Quicksand -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Quicksand:wght@500;600;700&display=swap" rel="stylesheet">
+    <!-- Canvas Confetti -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'p-blue': '#3B82F6',
+                        'd-blue': '#1D4ED8',
+                        's-yellow': '#FACC15',
+                        'd-yellow': '#EAB308',
+                        'h-red': '#EF4444',
+                        'd-red': '#B91C1C',
+                        'bg-soft': '#EFF6FF',
+                        'bg-cream': '#FEFCE8',
+                        'txt-slate': '#1E293B'
+                    },
+                    fontFamily: {
+                        fredoka: ['Fredoka', 'sans-serif'],
+                        quicksand: ['Quicksand', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        * {
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+        }
+
+        body {
+            font-family: 'Quicksand', sans-serif;
+            background-color: #0F172A;
+            margin: 0;
+            padding: 0;
+            height: 100dvh;
+            width: 100vw;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        /* 3D Pop Shadow Styles */
+        .btn-pop-blue {
+            background-color: #3B82F6;
+            color: white;
+            box-shadow: 0px 4px 0px 0px #1D4ED8;
+            border: 2px solid #1D4ED8;
+        }
+        .btn-pop-blue:active {
+            transform: translateY(3px);
+            box-shadow: 0px 1px 0px 0px #1D4ED8;
+        }
+
+        .btn-pop-yellow {
+            background-color: #FACC15;
+            color: #1E293B;
+            box-shadow: 0px 4px 0px 0px #EAB308;
+            border: 2px solid #CA8A04;
+        }
+        .btn-pop-yellow:active {
+            transform: translateY(3px);
+            box-shadow: 0px 1px 0px 0px #EAB308;
+        }
+
+        .btn-pop-red {
+            background-color: #EF4444;
+            color: white;
+            box-shadow: 0px 4px 0px 0px #B91C1C;
+            border: 2px solid #991B1B;
+        }
+        .btn-pop-red:active {
+            transform: translateY(3px);
+            box-shadow: 0px 1px 0px 0px #B91C1C;
+        }
+
+        .btn-pop-green {
+            background-color: #22C55E;
+            color: white;
+            box-shadow: 0px 4px 0px 0px #15803D;
+            border: 2px solid #166534;
+        }
+        .btn-pop-green:active {
+            transform: translateY(3px);
+            box-shadow: 0px 1px 0px 0px #15803D;
+        }
+
+        /* Selected State for Settings Buttons */
+        .selected-option {
+            transform: translateY(2px);
+            box-shadow: 0px 2px 0px 0px currentColor !important;
+            filter: brightness(0.95);
+            outline: 3px solid #1E293B;
+        }
+
+        /* Bomb Animations */
+        @keyframes fuseSpark {
+            0% { transform: scale(0.8) rotate(0deg); opacity: 0.8; }
+            50% { transform: scale(1.2) rotate(180deg); opacity: 1; }
+            100% { transform: scale(0.8) rotate(360deg); opacity: 0.8; }
+        }
+
+        .fuse-animation {
+            animation: fuseSpark 0.3s infinite ease-in-out;
+        }
+
+        @keyframes bombWobble {
+            0%, 100% { transform: rotate(-3deg) scale(1); }
+            50% { transform: rotate(3deg) scale(1.05); }
+        }
+
+        .bomb-idle {
+            animation: bombWobble 2s infinite ease-in-out;
+        }
+
+        @keyframes bombUrgent {
+            0% { transform: scale(1) rotate(-6deg); }
+            25% { transform: scale(1.1) rotate(6deg); }
+            50% { transform: scale(1.05) rotate(-6deg); }
+            75% { transform: scale(1.15) rotate(6deg); }
+            100% { transform: scale(1) rotate(-6deg); }
+        }
+
+        .bomb-urgent {
+            animation: bombUrgent 0.25s infinite linear;
+        }
+
+        /* Screen Flash Critical */
+        @keyframes flashRed {
+            0%, 100% { background-color: #EFF6FF; }
+            50% { background-color: #FECDD3; }
+        }
+
+        .flash-critical {
+            animation: flashRed 0.5s infinite ease-in-out;
+        }
+
+        /* Pulse Banner animation when turn changes */
+        @keyframes bannerPulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.04); }
+            100% { transform: scale(1); }
+        }
+
+        .banner-flash {
+            animation: bannerPulse 0.25s ease-in-out;
+        }
+
+        /* Time Penalty Popup Flash */
+        @keyframes penaltyFlash {
+            0% { opacity: 1; transform: scale(1.2); }
+            100% { opacity: 0; transform: scale(0.8); }
+        }
+
+        .penalty-anim {
+            animation: penaltyFlash 0.6s forwards ease-out;
+        }
+
+        /* Screen Shake */
+        @keyframes shake {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            10% { transform: translate(-8px, -8px) rotate(-2deg); }
+            20% { transform: translate(8px, 6px) rotate(2deg); }
+            30% { transform: translate(-6px, 8px) rotate(-1deg); }
+            40% { transform: translate(6px, -6px) rotate(1deg); }
+            50% { transform: translate(-4px, 4px) rotate(-2deg); }
+            60% { transform: translate(4px, -4px) rotate(2deg); }
+            70% { transform: translate(-8px, 6px) rotate(-1deg); }
+            80% { transform: translate(8px, -8px) rotate(1deg); }
+            90% { transform: translate(-4px, -2px) rotate(0deg); }
+        }
+
+        .shake-screen {
+            animation: shake 0.6s cubic-bezier(.36,.07,.19,.97) both;
+        }
+
+        /* Shake Wrong Answer */
+        @keyframes shakeWrong {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-10px); }
+            40%, 80% { transform: translateX(10px); }
+        }
+
+        .shake-wrong {
+            animation: shakeWrong 0.35s ease-in-out;
+        }
+
+        /* Modal Animation */
+        @keyframes popIn {
+            0% { transform: scale(0.5); opacity: 0; }
+            80% { transform: scale(1.05); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .pop-in {
+            animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- CONTAINER FRAME MOBILE -->
+    <div id="game-app" class="relative w-full max-w-[400px] h-[100dvh] bg-bg-soft text-txt-slate border-[6px] border-d-blue rounded-none sm:rounded-[36px] shadow-2xl flex flex-col justify-between overflow-hidden transition-colors duration-300">
+        
+        <!-- PERMANENT TOP BAR WITH RED (✕) EXIT BUTTON -->
+        <div class="w-full bg-white border-b-4 border-d-blue p-2.5 flex items-center justify-between z-30 shadow-sm shrink-0">
+            <div class="flex items-center gap-2">
+                <i class="fa-solid fa-bomb text-h-red text-xl"></i>
+                <span class="font-fredoka text-lg font-extrabold text-d-blue tracking-wide">BoomMath!</span>
+            </div>
+            
+            <!-- Permanent Red Exit Button (✕) -->
+            <button onclick="handleExitClick()" aria-label="Keluar Game" class="w-9 h-9 btn-pop-red rounded-xl flex items-center justify-center font-fredoka font-extrabold text-lg transition-transform">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+
+        <!-- MAIN CONTENT AREA -->
+        <div class="flex-1 overflow-hidden relative w-full h-full">
+            
+            <!-- ==================== SCREEN 1: SETUP SCREEN ==================== -->
+            <div id="setup-screen" class="w-full h-full p-4 flex flex-col justify-between overflow-y-auto">
+                <!-- Header Title -->
+                <div class="text-center mt-1">
+                    <div class="inline-block bg-s-yellow border-4 border-d-blue px-6 py-1.5 rounded-full shadow-[0px_4px_0px_0px_#1D4ED8] -rotate-2 mb-1">
+                        <h1 class="font-fredoka text-2xl font-extrabold text-d-blue tracking-wider flex items-center justify-center gap-2">
+                            🎮 Persiapan Main
+                        </h1>
+                    </div>
+                    <p class="font-quicksand font-bold text-xs text-slate-600">Jawab cepat sebelum bom meledak!</p>
+                </div>
+
+                <!-- Settings Card -->
+                <div class="bg-white border-4 border-d-blue rounded-3xl p-3 shadow-[0px_5px_0px_0px_#1D4ED8] space-y-3">
+                    
+                    <!-- Durasi Timer -->
+                    <div>
+                        <label class="font-fredoka text-xs sm:text-sm text-d-blue flex items-center gap-2 mb-1.5 font-bold">
+                            <i class="fa-solid fa-clock text-s-yellow"></i> Durasi Bom per Ronde:
+                        </label>
+                        <div class="grid grid-cols-4 gap-1.5" id="timer-selector">
+                            <button onclick="setTimer(20, this)" class="timer-btn btn-pop-yellow py-1.5 rounded-xl font-fredoka text-xs font-bold">20s</button>
+                            <button onclick="setTimer(30, this)" class="timer-btn btn-pop-yellow selected-option py-1.5 rounded-xl font-fredoka text-xs font-bold">30s</button>
+                            <button onclick="setTimer(60, this)" class="timer-btn btn-pop-yellow py-1.5 rounded-xl font-fredoka text-xs font-bold">60s</button>
+                            <button onclick="setTimer(120, this)" class="timer-btn btn-pop-yellow py-1.5 rounded-xl font-fredoka text-xs font-bold">2m</button>
+                        </div>
+                    </div>
+
+                    <!-- Difficulty -->
+                    <div>
+                        <label class="font-fredoka text-xs sm:text-sm text-d-blue flex items-center gap-2 mb-1.5 font-bold">
+                            <i class="fa-solid fa-brain text-h-red"></i> Tingkat Kesulitan:
+                        </label>
+                        <div class="grid grid-cols-3 gap-1.5" id="diff-selector">
+                            <button onclick="setDifficulty('easy', this)" class="diff-btn btn-pop-blue selected-option py-1.5 rounded-xl font-fredoka text-xs font-bold">Mudah</button>
+                            <button onclick="setDifficulty('medium', this)" class="diff-btn btn-pop-blue py-1.5 rounded-xl font-fredoka text-xs font-bold">Sedang</button>
+                            <button onclick="setDifficulty('hard', this)" class="diff-btn btn-pop-blue py-1.5 rounded-xl font-fredoka text-xs font-bold">Sulit</button>
+                        </div>
+                    </div>
+
+                    <!-- Players Input -->
+                    <div>
+                        <div class="flex justify-between items-center mb-1.5">
+                            <label class="font-fredoka text-xs sm:text-sm text-d-blue flex items-center gap-2 font-bold">
+                                <i class="fa-solid fa-users text-p-blue"></i> Pemain (2 - 4 Orang):
+                            </label>
+                            <div class="flex gap-1">
+                                <button onclick="changePlayerCount(-1)" class="w-7 h-7 bg-h-red text-white font-fredoka font-bold rounded-lg border-2 border-d-red flex items-center justify-center active:translate-y-0.5">-</button>
+                                <button onclick="changePlayerCount(1)" class="w-7 h-7 bg-green-500 btn-pop-green text-white font-fredoka font-bold rounded-lg flex items-center justify-center active:translate-y-0.5">+</button>
+                            </div>
+                        </div>
+                        <div id="player-inputs-container" class="space-y-1.5 max-h-[130px] overflow-y-auto pr-1">
+                            <!-- Inputs generated dynamically -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Start Game Button -->
+                <button onclick="startGame()" class="w-full btn-pop-red py-3 rounded-2xl font-fredoka text-xl font-extrabold tracking-wider flex items-center justify-center gap-2 mb-1">
+                    <i class="fa-solid fa-play"></i> MULAI GAME!
+                </button>
+            </div>
+
+            <!-- ==================== SCREEN 2: GAMEPLAY SCREEN ==================== -->
+            <div id="gameplay-screen" class="hidden w-full h-full p-4 flex flex-col justify-between">
+                
+                <!-- Status Indicators -->
+                <div class="flex justify-between items-center bg-white border-4 border-d-blue rounded-2xl p-2 shadow-[0px_3px_0px_0px_#1D4ED8]">
+                    <div class="flex items-center gap-2">
+                        <span id="round-indicator" class="bg-s-yellow text-d-blue font-fredoka px-2.5 py-0.5 rounded-lg text-xs font-bold border-2 border-d-yellow">Ronde 1</span>
+                        <span id="diff-indicator" class="bg-p-blue text-white font-fredoka px-2.5 py-0.5 rounded-lg text-xs font-bold border-2 border-d-blue">Mudah</span>
+                    </div>
+                    <span class="font-fredoka text-xs font-bold text-slate-500 flex items-center gap-1">
+                        <i class="fa-solid fa-shield-halved text-d-blue"></i> Mode Bertahan
+                    </span>
+                </div>
+
+                <!-- Current Active Player Banner -->
+                <div id="player-banner" class="relative bg-p-blue border-4 border-d-blue text-white text-center py-2 rounded-2xl shadow-[0px_4px_0px_0px_#1D4ED8] transition-all duration-200">
+                    <p id="banner-action-text" class="font-quicksand font-extrabold text-[11px] uppercase tracking-wider text-yellow-300">
+                        <i class="fa-solid fa-hand-holding-hand"></i> OPER HP KE PLAYER INI:
+                    </p>
+                    <h2 id="current-player-name" class="font-fredoka text-2xl font-extrabold tracking-wide drop-shadow-md">PLAYER 1</h2>
+                    
+                    <!-- Time Penalty Visual Flash -->
+                    <div id="penalty-badge" class="hidden absolute top-1 right-2 bg-h-red border-2 border-d-red text-white font-fredoka font-bold text-xs px-2 py-0.5 rounded-lg shadow-md">
+                        -2s ⚠️
+                    </div>
+                </div>
+
+                <!-- Bomb & Timer Visual Section -->
+                <div class="relative flex flex-col items-center justify-center my-0.5">
+                    <!-- Bomb Graphics -->
+                    <div id="bomb-container" class="relative bomb-idle transition-transform duration-200">
+                        <!-- Fuse Spark -->
+                        <div id="fuse-spark" class="absolute -top-3 left-[55%] transform -translate-x-1/2 w-8 h-8 text-s-yellow fuse-animation z-10">
+                            <i class="fa-solid fa-burst text-2xl text-s-yellow"></i>
+                        </div>
+                        <!-- Bomb Body -->
+                        <div class="w-24 h-24 sm:w-28 sm:h-28 bg-slate-900 rounded-full border-4 border-slate-700 shadow-2xl flex items-center justify-center relative overflow-hidden">
+                            <!-- Bomb Shininess -->
+                            <div class="absolute top-2 left-4 w-6 h-3 bg-white/20 rounded-full -rotate-45"></div>
+                            <!-- Timer Display Inside Bomb -->
+                            <div class="text-center z-10">
+                                <span id="timer-display" class="font-fredoka text-3xl font-extrabold text-s-yellow tracking-wider drop-shadow-md">30s</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Timer Progress Bar -->
+                    <div class="w-full bg-slate-200 border-2 border-d-blue h-3.5 rounded-full mt-2.5 overflow-hidden p-0.5">
+                        <div id="timer-bar" class="bg-s-yellow h-full rounded-full transition-all duration-100 w-full"></div>
+                    </div>
+                </div>
+
+                <!-- Math Question Box -->
+                <div id="question-card" class="bg-white border-4 border-d-blue rounded-3xl p-2.5 text-center shadow-[0px_4px_0px_0px_#1D4ED8] transition-all">
+                    <p class="font-quicksand text-xs font-bold text-slate-500 mb-0.5">Pilih Jawaban yang Benar!</p>
+                    <h3 id="question-text" class="font-fredoka text-2xl sm:text-3xl font-extrabold text-d-blue py-0.5">12 + 15 = ?</h3>
+                </div>
+
+                <!-- Answer Buttons Grid -->
+                <div id="answers-grid" class="grid grid-cols-2 gap-2 mb-1">
+                    <button class="answer-btn btn-pop-yellow py-2.5 rounded-2xl font-fredoka text-xl font-bold">27</button>
+                    <button class="answer-btn btn-pop-yellow py-2.5 rounded-2xl font-fredoka text-xl font-bold">25</button>
+                    <button class="answer-btn btn-pop-yellow py-2.5 rounded-2xl font-fredoka text-xl font-bold">30</button>
+                    <button class="answer-btn btn-pop-yellow py-2.5 rounded-2xl font-fredoka text-xl font-bold">22</button>
+                </div>
+            </div>
+
+            <!-- ==================== SCREEN 3: VICTORY SCREEN ==================== -->
+            <div id="victory-screen" class="hidden w-full h-full p-4 flex flex-col justify-between items-center text-center">
+                <div class="mt-2">
+                    <div class="inline-block bg-s-yellow border-4 border-d-blue px-6 py-2 rounded-full shadow-[0px_4px_0px_0px_#1D4ED8] -rotate-2 mb-2">
+                        <h2 class="font-fredoka text-2xl font-extrabold text-d-blue">PEMENANG UTAMA!</h2>
+                    </div>
+                </div>
+
+                <!-- Trophy Icon & Winner Name -->
+                <div class="bg-white border-4 border-d-blue rounded-3xl p-5 shadow-[0px_6px_0px_0px_#1D4ED8] w-full max-w-[320px] flex flex-col items-center gap-2">
+                    <div class="relative">
+                        <i class="fa-solid fa-trophy text-6xl text-s-yellow drop-shadow-md animate-bounce"></i>
+                        <i class="fa-solid fa-crown absolute -top-4 -right-2 text-2xl text-h-red rotate-12"></i>
+                    </div>
+                    <h1 id="winner-name" class="font-fredoka text-2xl font-extrabold text-d-blue break-all">PLAYER 1</h1>
+                    <p class="font-quicksand font-bold text-xs text-slate-500">Selamat! Kamu berhasil bertahan dari ledakan bom!</p>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="w-full space-y-2 mb-1">
+                    <button onclick="playAgain()" class="w-full btn-pop-green py-3 rounded-2xl font-fredoka text-lg font-extrabold tracking-wider flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-rotate-right"></i> MAIN LAGI
+                    </button>
+                    <button onclick="handleExitClick()" class="w-full btn-pop-blue py-2.5 rounded-2xl font-fredoka text-base font-bold flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-house"></i> KE SETUP GAME
+                    </button>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- ==================== MODAL OVERLAYS ==================== -->
+        
+        <!-- Two-Tier Exit Confirmation Modal -->
+        <div id="exit-modal" class="hidden absolute inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+            <div class="bg-white border-4 border-d-blue rounded-3xl p-5 text-center shadow-2xl pop-in w-full max-w-[320px]">
+                <div class="w-16 h-16 bg-red-100 border-4 border-h-red rounded-full flex items-center justify-center mx-auto mb-3">
+                    <i class="fa-solid fa-right-from-bracket text-3xl text-h-red"></i>
+                </div>
+                <h2 id="exit-modal-title" class="font-fredoka text-2xl font-extrabold text-d-blue mb-1">Batalkan Permainan?</h2>
+                <p id="exit-modal-desc" class="font-quicksand text-xs font-bold text-slate-600 mb-4">Yakin ingin menghentikan permainan dan kembali ke Halaman Utama?</p>
+                
+                <div class="grid grid-cols-2 gap-2">
+                    <button onclick="cancelExit()" class="w-full btn-pop-blue py-2.5 rounded-xl font-fredoka text-base font-bold">
+                        Batal
+                    </button>
+                    <button onclick="confirmExitAction()" class="w-full btn-pop-red py-2.5 rounded-xl font-fredoka text-base font-bold">
+                        Ya, Keluar
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Explosion / Elimination Modal -->
+        <div id="explosion-modal" class="hidden absolute inset-0 bg-red-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4">
+            <div class="bg-white border-4 border-d-red rounded-3xl p-5 text-center shadow-2xl pop-in w-full max-w-[320px]">
+                <div class="w-20 h-20 bg-red-100 border-4 border-h-red rounded-full flex items-center justify-center mx-auto mb-2 animate-ping">
+                    <i class="fa-solid fa-burst text-4xl text-h-red"></i>
+                </div>
+                <h2 class="font-fredoka text-3xl font-extrabold text-h-red mb-1">DUARRR!! 💥</h2>
+                <p class="font-quicksand text-xs font-bold text-slate-500 mb-3">WAKTU HABIS!</p>
+                <div class="bg-red-50 border-2 border-red-200 p-3 rounded-2xl mb-4">
+                    <span id="eliminated-player-name" class="font-fredoka text-xl font-extrabold text-d-red">PLAYER 1</span>
+                    <p class="font-quicksand text-xs font-bold text-red-500">Gugur & Tereliminasi!</p>
+                </div>
+                <button onclick="nextRoundOrFinish()" class="w-full btn-pop-red py-3 rounded-2xl font-fredoka text-lg font-extrabold flex items-center justify-center gap-2">
+                    Lanjutkan <i class="fa-solid fa-forward"></i>
+                </button>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ==================== JAVASCRIPT LOGIC ==================== -->
+    <script>
+        /* --- Web Audio API Synthesizer --- */
+        class AudioSystem {
+            constructor() {
+                this.ctx = null;
+            }
+
+            init() {
+                if (!this.ctx) {
+                    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+            }
+
+            playClick() {
+                this.init();
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(600, this.ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(1200, this.ctx.currentTime + 0.08);
+                gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
+                gain.gain.linearRampToValueAtTime(0.01, this.ctx.currentTime + 0.08);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start();
+                osc.stop(this.ctx.currentTime + 0.08);
+            }
+
+            playTick(isUrgent = false) {
+                this.init();
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = isUrgent ? 'square' : 'sine';
+                const freq = isUrgent ? 900 : 450;
+                osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+                gain.gain.setValueAtTime(isUrgent ? 0.3 : 0.15, this.ctx.currentTime);
+                gain.gain.linearRampToValueAtTime(0.01, this.ctx.currentTime + 0.05);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start();
+                osc.stop(this.ctx.currentTime + 0.05);
+            }
+
+            playWrong() {
+                this.init();
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(180, this.ctx.currentTime);
+                osc.frequency.setValueAtTime(110, this.ctx.currentTime + 0.1);
+                gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
+                gain.gain.linearRampToValueAtTime(0.01, this.ctx.currentTime + 0.2);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start();
+                osc.stop(this.ctx.currentTime + 0.2);
+            }
+
+            playFastPass() {
+                this.init();
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(523.25, now); // C5
+                osc.frequency.exponentialRampToValueAtTime(1046.50, now + 0.12); // C6
+                gain.gain.setValueAtTime(0.35, now);
+                gain.gain.linearRampToValueAtTime(0.01, now + 0.12);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start();
+                osc.stop(now + 0.12);
+            }
+
+            playExplosion() {
+                this.init();
+                const now = this.ctx.currentTime;
+                const bufferSize = this.ctx.sampleRate * 0.8;
+                const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+                const data = buffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) {
+                    data[i] = Math.random() * 2 - 1;
+                }
+                const noise = this.ctx.createBufferSource();
+                noise.buffer = buffer;
+
+                const filter = this.ctx.createBiquadFilter();
+                filter.type = 'lowpass';
+                filter.frequency.setValueAtTime(800, now);
+                filter.frequency.linearRampToValueAtTime(50, now + 0.8);
+
+                const gain = this.ctx.createGain();
+                gain.gain.setValueAtTime(0.8, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.8);
+
+                noise.connect(filter);
+                filter.connect(gain);
+                gain.connect(this.ctx.destination);
+                noise.start(now);
+                noise.stop(now + 0.8);
+            }
+
+            playFanfare() {
+                this.init();
+                const notes = [523.25, 659.25, 783.99, 1046.50];
+                notes.forEach((freq, i) => {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(freq, this.ctx.currentTime + i * 0.12);
+                    gain.gain.setValueAtTime(0.3, this.ctx.currentTime + i * 0.12);
+                    gain.gain.linearRampToValueAtTime(0.01, this.ctx.currentTime + i * 0.12 + 0.3);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start(this.ctx.currentTime + i * 0.12);
+                    osc.stop(this.ctx.currentTime + i * 0.12 + 0.3);
+                });
+            }
+        }
+
+        const audio = new AudioSystem();
+
+        /* --- Game State Variables --- */
+        let players = ["Player 1", "Player 2", "Player 3"];
+        let activePlayers = [];
+        let currentTurnIndex = 0;
+        let selectedDuration = 30; // seconds
+        let difficulty = 'easy'; // easy, medium, hard
+        let currentRound = 1;
+        
+        let timerSeconds = 30;
+        let timerInterval = null;
+        let currentCorrectAnswer = 0;
+        let currentScreen = 'setup'; // 'setup', 'gameplay', 'victory'
+        let exitTargetTier = 1; // 1 = Go to setup, 2 = Go to dashboard (index.html)
+
+        /* --- Setup Screen Handlers --- */
+        function renderPlayerInputs() {
+            const container = document.getElementById('player-inputs-container');
+            container.innerHTML = '';
+            players.forEach((p, index) => {
+                const div = document.createElement('div');
+                div.className = 'flex items-center gap-2';
+                div.innerHTML = `
+                    <span class="font-fredoka text-xs font-bold text-d-blue w-16">Player ${index + 1}:</span>
+                    <input type="text" value="${p}" onchange="updatePlayerName(${index}, this.value)" 
+                        class="flex-1 bg-slate-100 border-2 border-d-blue rounded-xl px-3 py-1 font-quicksand font-bold text-xs text-txt-slate focus:outline-none focus:bg-white" maxlength="12">
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function updatePlayerName(index, val) {
+            if (val.trim() !== '') {
+                players[index] = val.trim();
+            }
+        }
+
+        function changePlayerCount(delta) {
+            audio.playClick();
+            const newCount = players.length + delta;
+            if (newCount >= 2 && newCount <= 4) {
+                if (delta > 0) {
+                    players.push(`Player ${newCount}`);
+                } else {
+                    players.pop();
+                }
+                renderPlayerInputs();
+            }
+        }
+
+        function setTimer(sec, btn) {
+            audio.playClick();
+            selectedDuration = sec;
+            document.querySelectorAll('.timer-btn').forEach(b => b.classList.remove('selected-option'));
+            btn.classList.add('selected-option');
+        }
+
+        function setDifficulty(diff, btn) {
+            audio.playClick();
+            difficulty = diff;
+            document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('selected-option'));
+            btn.classList.add('selected-option');
+        }
+
+        /* --- Two-Tier Exit / Navigation System --- */
+        function handleExitClick() {
+            audio.playClick();
+
+            if (currentScreen === 'setup') {
+                // Tier 2 Exit: From Setup to main dashboard index.html
+                exitTargetTier = 2;
+                document.getElementById('exit-modal-title').innerText = "Kembali ke Dashboard?";
+                document.getElementById('exit-modal-desc').innerText = "Yakin ingin keluar ke dashboard utama?";
+            } else {
+                // Tier 1 Exit: From Gameplay or Victory Screen back to Game Setup
+                exitTargetTier = 1;
+                document.getElementById('exit-modal-title').innerText = "Batalkan Permainan?";
+                document.getElementById('exit-modal-desc').innerText = "Yakin ingin menghentikan permainan dan kembali ke Halaman Utama?";
+                
+                // Pause Game Timer if currently running in gameplay
+                if (currentScreen === 'gameplay') {
+                    clearInterval(timerInterval);
+                }
+            }
+
+            document.getElementById('exit-modal').classList.remove('hidden');
+        }
+
+        function cancelExit() {
+            audio.playClick();
+            document.getElementById('exit-modal').classList.add('hidden');
+
+            // Resume game timer if exited cancellation during active gameplay
+            if (currentScreen === 'gameplay' && timerSeconds > 0) {
+                startTimer();
+            }
+        }
+
+        function confirmExitAction() {
+            audio.playClick();
+            document.getElementById('exit-modal').classList.add('hidden');
+
+            if (exitTargetTier === 2) {
+                // Redirect to main dashboard
+                window.location.href = "index.html";
+            } else {
+                // Stop timer and return to game setup
+                clearInterval(timerInterval);
+                document.getElementById('game-app').classList.remove('flash-critical', 'shake-screen');
+                backToMenu();
+            }
+        }
+
+        /* --- Game Controls --- */
+        function startGame() {
+            audio.playClick();
+            activePlayers = [...players];
+            currentRound = 1;
+            currentTurnIndex = 0;
+            currentScreen = 'gameplay';
+
+            document.getElementById('setup-screen').classList.add('hidden');
+            document.getElementById('victory-screen').classList.add('hidden');
+            document.getElementById('gameplay-screen').classList.remove('hidden');
+
+            startRound();
+        }
+
+        function startRound() {
+            timerSeconds = selectedDuration;
+            
+            document.getElementById('round-indicator').innerText = `Ronde ${currentRound}`;
+            document.getElementById('diff-indicator').innerText = difficulty === 'easy' ? 'Mudah' : (difficulty === 'medium' ? 'Sedang' : 'Sulit');
+            
+            updatePlayerTurnDisplay(false);
+            generateQuestion();
+            startTimer();
+        }
+
+        function updatePlayerTurnDisplay(triggerFlash = true) {
+            const currentPlayer = activePlayers[currentTurnIndex];
+            const nameEl = document.getElementById('current-player-name');
+            const banner = document.getElementById('player-banner');
+
+            nameEl.innerText = currentPlayer.toUpperCase();
+
+            if (triggerFlash) {
+                banner.classList.add('banner-flash');
+                setTimeout(() => banner.classList.remove('banner-flash'), 250);
+            }
+        }
+
+        /* --- Question Generator --- */
+        function generateQuestion() {
+            let num1, num2, op, answer;
+            
+            if (difficulty === 'easy') {
+                const ops = ['+', '-'];
+                op = ops[Math.floor(Math.random() * ops.length)];
+                if (op === '+') {
+                    num1 = Math.floor(Math.random() * 20) + 1;
+                    num2 = Math.floor(Math.random() * 20) + 1;
+                    answer = num1 + num2;
+                } else {
+                    num1 = Math.floor(Math.random() * 25) + 5;
+                    num2 = Math.floor(Math.random() * num1) + 1;
+                    answer = num1 - num2;
+                }
+            } else if (difficulty === 'medium') {
+                const ops = ['+', '-', '×'];
+                op = ops[Math.floor(Math.random() * ops.length)];
+                if (op === '+') {
+                    num1 = Math.floor(Math.random() * 50) + 10;
+                    num2 = Math.floor(Math.random() * 50) + 10;
+                    answer = num1 + num2;
+                } else if (op === '-') {
+                    num1 = Math.floor(Math.random() * 60) + 20;
+                    num2 = Math.floor(Math.random() * num1) + 1;
+                    answer = num1 - num2;
+                } else {
+                    num1 = Math.floor(Math.random() * 10) + 2;
+                    num2 = Math.floor(Math.random() * 10) + 2;
+                    answer = num1 * num2;
+                }
+            } else { // Hard
+                const ops = ['+', '-', '×', '÷'];
+                op = ops[Math.floor(Math.random() * ops.length)];
+                if (op === '+') {
+                    num1 = Math.floor(Math.random() * 100) + 20;
+                    num2 = Math.floor(Math.random() * 100) + 20;
+                    answer = num1 + num2;
+                } else if (op === '-') {
+                    num1 = Math.floor(Math.random() * 150) + 30;
+                    num2 = Math.floor(Math.random() * num1) + 1;
+                    answer = num1 - num2;
+                } else if (op === '×') {
+                    num1 = Math.floor(Math.random() * 12) + 3;
+                    num2 = Math.floor(Math.random() * 12) + 3;
+                    answer = num1 * num2;
+                } else {
+                    const mult = Math.floor(Math.random() * 10) + 2;
+                    answer = Math.floor(Math.random() * 10) + 2;
+                    num1 = answer * mult;
+                    num2 = mult;
+                }
+            }
+
+            currentCorrectAnswer = answer;
+            document.getElementById('question-text').innerText = `${num1} ${op} ${num2} = ?`;
+
+            // Generate 4 Options
+            let options = [answer];
+            while (options.length < 4) {
+                let offset = (Math.floor(Math.random() * 5) + 1) * (Math.random() < 0.5 ? 1 : -1);
+                let wrongAns = answer + offset;
+                if (wrongAns >= 0 && !options.includes(wrongAns)) {
+                    options.push(wrongAns);
+                }
+            }
+
+            // Shuffle Options
+            options.sort(() => Math.random() - 0.5);
+
+            const grid = document.getElementById('answers-grid');
+            grid.innerHTML = '';
+            options.forEach(opt => {
+                const btn = document.createElement('button');
+                btn.className = 'answer-btn btn-pop-yellow py-2.5 rounded-2xl font-fredoka text-xl font-bold';
+                btn.innerText = opt;
+                btn.onclick = () => checkAnswer(opt, btn);
+                grid.appendChild(btn);
+            });
+        }
+
+        /* --- Seamless Answer Validation --- */
+        function checkAnswer(selectedOpt, btnElement) {
+            if (selectedOpt === currentCorrectAnswer) {
+                // Correct Answer: Quick sound & vibrate
+                audio.playFastPass();
+                if (navigator.vibrate) navigator.vibrate(40);
+
+                // Instantly advance to next player without stopping timer
+                currentTurnIndex = (currentTurnIndex + 1) % activePlayers.length;
+                
+                // Update player banner and load next question
+                updatePlayerTurnDisplay(true);
+                generateQuestion();
+            } else {
+                // Wrong Answer: Time penalty + shake
+                audio.playWrong();
+                if (navigator.vibrate) navigator.vibrate([80, 40, 80]);
+
+                // Deduct 2 seconds penalty
+                timerSeconds = Math.max(1, timerSeconds - 2);
+
+                // Show -2s visual badge
+                const badge = document.getElementById('penalty-badge');
+                badge.classList.remove('hidden');
+                setTimeout(() => badge.classList.add('hidden'), 600);
+
+                // Shake question card
+                const qCard = document.getElementById('question-card');
+                qCard.classList.add('shake-wrong');
+                btnElement.classList.add('btn-pop-red');
+                
+                setTimeout(() => {
+                    qCard.classList.remove('shake-wrong');
+                    btnElement.classList.remove('btn-pop-red');
+                }, 350);
+            }
+        }
+
+        /* --- Timer & Bomb Mechanism --- */
+        function startTimer() {
+            clearInterval(timerInterval);
+            const bombContainer = document.getElementById('bomb-container');
+            const app = document.getElementById('game-app');
+
+            timerInterval = setInterval(() => {
+                timerSeconds--;
+                
+                // Update UI Timer Display & Progress Bar
+                document.getElementById('timer-display').innerText = `${timerSeconds}s`;
+                const progressPct = Math.max(0, (timerSeconds / selectedDuration) * 100);
+                document.getElementById('timer-bar').style.width = `${progressPct}%`;
+
+                // Critical Timer Effects (< 5 seconds)
+                if (timerSeconds <= 5 && timerSeconds > 0) {
+                    audio.playTick(true);
+                    if (navigator.vibrate) navigator.vibrate(60);
+                    bombContainer.className = 'relative bomb-urgent';
+                    app.classList.add('flash-critical');
+                } else if (timerSeconds > 5) {
+                    audio.playTick(false);
+                    bombContainer.className = 'relative bomb-idle';
+                    app.classList.remove('flash-critical');
+                }
+
+                // Bomb Explodes
+                if (timerSeconds <= 0) {
+                    triggerExplosion();
+                }
+            }, 1000);
+        }
+
+        function triggerExplosion() {
+            clearInterval(timerInterval);
+            audio.playExplosion();
+
+            if (navigator.vibrate) navigator.vibrate([200, 100, 300, 100, 400]);
+
+            const app = document.getElementById('game-app');
+            app.classList.remove('flash-critical');
+            app.classList.add('shake-screen');
+
+            setTimeout(() => {
+                app.classList.remove('shake-screen');
+            }, 600);
+
+            // Eliminate current player holding the phone
+            const eliminatedPlayer = activePlayers[currentTurnIndex];
+            activePlayers.splice(currentTurnIndex, 1);
+
+            document.getElementById('eliminated-player-name').innerText = eliminatedPlayer.toUpperCase();
+            document.getElementById('explosion-modal').classList.remove('hidden');
+        }
+
+        function nextRoundOrFinish() {
+            audio.playClick();
+            document.getElementById('explosion-modal').classList.add('hidden');
+
+            if (activePlayers.length === 1) {
+                // Winner!
+                showVictoryScreen(activePlayers[0]);
+            } else {
+                // Next round with remaining players
+                currentRound++;
+                if (currentTurnIndex >= activePlayers.length) {
+                    currentTurnIndex = 0;
+                }
+                startRound();
+            }
+        }
+
+        /* --- Victory Screen --- */
+        function showVictoryScreen(winner) {
+            currentScreen = 'victory';
+            audio.playFanfare();
+            document.getElementById('gameplay-screen').classList.add('hidden');
+            document.getElementById('victory-screen').classList.remove('hidden');
+            document.getElementById('winner-name').innerText = winner.toUpperCase();
+
+            // Trigger Confetti
+            if (typeof confetti === 'function') {
+                confetti({
+                    particleCount: 120,
+                    spread: 80,
+                    origin: { y: 0.6 }
+                });
+            }
+        }
+
+        function playAgain() {
+            audio.playClick();
+            startGame();
+        }
+
+        function backToMenu() {
+            currentScreen = 'setup';
+            document.getElementById('victory-screen').classList.add('hidden');
+            document.getElementById('gameplay-screen').classList.add('hidden');
+            document.getElementById('setup-screen').classList.remove('hidden');
+        }
+
+        // Initialize setup screen
+        renderPlayerInputs();
+    </script>
+</body>
+</html>
