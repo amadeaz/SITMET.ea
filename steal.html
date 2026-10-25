@@ -1,0 +1,1156 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Steal the Coin - SITMET.ea Arcade</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome 6 CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts: Fredoka & Quicksand -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Quicksand:wght@500;600;700&display=swap" rel="stylesheet">
+    <!-- Canvas Confetti CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'p-blue': '#3B82F6',
+                        'd-blue': '#1D4ED8',
+                        's-yellow': '#FACC15',
+                        'd-yellow': '#CA8A04',
+                        'h-red': '#EF4444',
+                        'd-red': '#991B1B',
+                        'bg-soft-blue': '#EFF6FF',
+                        'bg-soft-yellow': '#FEFCE8',
+                        'p1-color': '#EF4444',
+                        'p2-color': '#3B82F6',
+                        'p3-color': '#10B981',
+                        'p4-color': '#F59E0B'
+                    },
+                    fontFamily: {
+                        fredoka: ['Fredoka', 'sans-serif'],
+                        quicksand: ['Quicksand', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* Touch handling prevention for double-tap zoom */
+        * {
+            touch-action: manipulation;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
+        }
+
+        /* Cartoon 3D Pop Shadow Buttons & Elements */
+        .btn-pop-yellow {
+            background-color: #FACC15;
+            color: #1E293B;
+            border: 4px solid #1D4ED8;
+            box-shadow: 0px 5px 0px 0px #CA8A04, 0px 7px 0px 0px #1D4ED8;
+        }
+        .btn-pop-yellow:active {
+            transform: translateY(4px);
+            box-shadow: 0px 1px 0px 0px #CA8A04, 0px 3px 0px 0px #1D4ED8;
+        }
+
+        .btn-pop-blue {
+            background-color: #3B82F6;
+            color: #FFFFFF;
+            border: 4px solid #1D4ED8;
+            box-shadow: 0px 5px 0px 0px #1D4ED8;
+        }
+        .btn-pop-blue:active {
+            transform: translateY(4px);
+            box-shadow: 0px 1px 0px 0px #1D4ED8;
+        }
+
+        .btn-pop-red {
+            background-color: #EF4444;
+            color: #FFFFFF;
+            border: 3px solid #991B1B;
+            box-shadow: 0px 4px 0px 0px #991B1B;
+        }
+        .btn-pop-red:active {
+            transform: translateY(3px);
+            box-shadow: 0px 1px 0px 0px #991B1B;
+        }
+
+        .btn-pop-green {
+            background-color: #10B981;
+            color: #FFFFFF;
+            border: 4px solid #047857;
+            box-shadow: 0px 5px 0px 0px #047857;
+        }
+        .btn-pop-green:active {
+            transform: translateY(4px);
+            box-shadow: 0px 1px 0px 0px #047857;
+        }
+
+        .card-cartoon {
+            border: 4px solid #1D4ED8;
+            box-shadow: 0px 6px 0px 0px #1D4ED8;
+        }
+
+        /* Coin idle bounce animation */
+        @keyframes coin-bounce {
+            0%, 100% { transform: scale(1) translateY(0); }
+            50% { transform: scale(1.06) translateY(-4px); }
+        }
+        .coin-anim {
+            animation: coin-bounce 1.5s infinite ease-in-out;
+        }
+
+        /* Dizzy Spinning Stars Animation */
+        @keyframes dizzy-spin {
+            0% { transform: rotate(0deg) scale(1); }
+            50% { transform: rotate(180deg) scale(1.3); }
+            100% { transform: rotate(360deg) scale(1); }
+        }
+        .dizzy-stars {
+            animation: dizzy-spin 1s infinite linear;
+        }
+
+        /* Screen Shake Animation for Penalty */
+        @keyframes shake-zone {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            20% { transform: translate(-6px, 4px) rotate(-3deg); }
+            40% { transform: translate(6px, -4px) rotate(3deg); }
+            60% { transform: translate(-4px, -2px) rotate(-2deg); }
+            80% { transform: translate(4px, 2px) rotate(2deg); }
+        }
+        .shake-effect {
+            animation: shake-zone 0.4s ease-in-out;
+        }
+
+        /* Modal Pop-in Animation */
+        @keyframes popIn {
+            0% { transform: scale(0.7); opacity: 0; }
+            80% { transform: scale(1.05); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .animate-pop-in {
+            animation: popIn 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        /* Hide scrollbars strictly */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body class="bg-slate-900 flex items-center justify-center min-h-dvh font-quicksand p-0 sm:p-4 overflow-hidden select-none">
+
+    <!-- FRAME CONTAINER ARCADE (Max 400px, 100dvh, border 6px dark blue) -->
+    <div id="arcade-container" class="w-full max-w-[400px] h-[100dvh] bg-bg-soft-blue border-0 sm:border-[6px] border-d-blue rounded-none sm:rounded-[36px] flex flex-col relative overflow-hidden shadow-2xl no-scrollbar">
+        
+        <!-- PERMANENT TOP STATUS BAR -->
+        <header class="w-full bg-white border-b-4 border-d-blue px-4 py-2 flex items-center justify-between z-30 shrink-0">
+            <!-- Game Title / Logo -->
+            <div class="flex items-center gap-2">
+                <div class="w-8 h-8 rounded-xl bg-s-yellow border-2 border-d-blue flex items-center justify-center shadow-sm">
+                    <i class="fa-solid fa-coins text-d-yellow text-base"></i>
+                </div>
+                <span class="font-fredoka font-bold text-lg text-d-blue tracking-wide">STEAL COIN</span>
+            </div>
+
+            <!-- Header Controls: Sound Toggle & Exit -->
+            <div class="flex items-center gap-2">
+                <button id="audio-toggle-btn" onclick="toggleAudio()" aria-label="Toggle Audio" class="w-9 h-9 bg-slate-100 border-2 border-d-blue rounded-xl flex items-center justify-center font-fredoka font-bold text-d-blue active:translate-y-0.5 transition-transform">
+                    <i id="audio-icon" class="fa-solid fa-volume-high"></i>
+                </button>
+                <button onclick="handleExitClick()" aria-label="Keluar Game" class="w-9 h-9 btn-pop-red rounded-xl flex items-center justify-center font-fredoka font-extrabold text-lg transition-transform">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- MAIN DYNAMIC CONTENT CONTAINER -->
+        <main id="main-content" class="flex-1 flex flex-col relative overflow-hidden bg-bg-soft-blue">
+            
+            <!-- ------------------------------------------------------------------ -->
+            <!-- SCREEN 1: SETUP SCREEN -->
+            <!-- ------------------------------------------------------------------ -->
+            <section id="setup-screen" class="w-full h-full flex flex-col justify-between p-4 overflow-y-auto no-scrollbar">
+                
+                <!-- Hero Banner -->
+                <div class="text-center mt-2">
+                    <div class="inline-block relative">
+                        <span class="bg-s-yellow text-d-blue font-fredoka font-extrabold text-xs px-3 py-1 rounded-full border-2 border-d-blue uppercase tracking-wider mb-1 inline-block shadow-sm">
+                            SITMET.ea Arcade
+                        </span>
+                        <h1 class="font-fredoka font-black text-3xl text-d-blue drop-shadow-sm leading-tight">
+                            STEAL THE COIN!
+                        </h1>
+                    </div>
+                    <p class="text-xs font-bold text-slate-600 mt-1 px-2">
+                        Dengarkan Bell Cue "DING!" 🔔 Awas Nada Distraksi Palsu & Penalti Stun! 😵
+                    </p>
+                </div>
+
+                <!-- Setup Form Card -->
+                <div class="bg-white rounded-3xl card-cartoon p-4 my-auto flex flex-col gap-4">
+                    
+                    <!-- Player Count Selection -->
+                    <div>
+                        <label class="block font-fredoka font-bold text-sm text-d-blue mb-1.5 text-center">
+                            JUMLAH PEMAIN (1 HP)
+                        </label>
+                        <div class="grid grid-cols-3 gap-2">
+                            <button onclick="setPlayerCount(2)" id="btn-pcount-2" class="pcount-btn py-2 rounded-2xl font-fredoka font-bold text-base transition-all btn-pop-yellow">
+                                2 Player
+                            </button>
+                            <button onclick="setPlayerCount(3)" id="btn-pcount-3" class="pcount-btn py-2 rounded-2xl font-fredoka font-bold text-base transition-all bg-slate-100 border-2 border-slate-300 text-slate-600">
+                                3 Player
+                            </button>
+                            <button onclick="setPlayerCount(4)" id="btn-pcount-4" class="pcount-btn py-2 rounded-2xl font-fredoka font-bold text-base transition-all bg-slate-100 border-2 border-slate-300 text-slate-600">
+                                4 Player
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Player Names Inputs -->
+                    <div>
+                        <label class="block font-fredoka font-bold text-xs text-slate-500 mb-1.5 uppercase">
+                            Nama Pemain
+                        </label>
+                        <div id="player-inputs-container" class="flex flex-col gap-2">
+                            <!-- Injected by JS -->
+                        </div>
+                    </div>
+
+                    <!-- Total Rounds Selection -->
+                    <div>
+                        <label class="block font-fredoka font-bold text-xs text-slate-500 mb-1.5 uppercase">
+                            Target Ronde
+                        </label>
+                        <div class="grid grid-cols-3 gap-2">
+                            <button onclick="setTotalRounds(5)" id="btn-round-5" class="round-btn py-1.5 rounded-xl font-fredoka font-bold text-xs btn-pop-blue">
+                                5 Ronde
+                            </button>
+                            <button onclick="setTotalRounds(10)" id="btn-round-10" class="round-btn py-1.5 rounded-xl font-fredoka font-bold text-xs bg-slate-100 border-2 border-slate-300 text-slate-600">
+                                10 Ronde
+                            </button>
+                            <button onclick="setTotalRounds(15)" id="btn-round-15" class="round-btn py-1.5 rounded-xl font-fredoka font-bold text-xs bg-slate-100 border-2 border-slate-300 text-slate-600">
+                                15 Ronde
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Start Button -->
+                <button onclick="startGame()" class="w-full py-3.5 btn-pop-green rounded-2xl font-fredoka font-extrabold text-xl tracking-wider uppercase flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-play"></i> MULAI GAME!
+                </button>
+            </section>
+
+
+            <!-- ------------------------------------------------------------------ -->
+            <!-- SCREEN 2: GAMEPLAY SCREEN (TAP ZONES) -->
+            <!-- ------------------------------------------------------------------ -->
+            <section id="gameplay-screen" class="w-full h-full relative hidden flex flex-col overflow-hidden">
+                
+                <!-- ROUND & STATUS HEADER OVERLAY -->
+                <div class="absolute top-2 left-0 right-0 z-20 flex justify-center items-center pointer-events-none px-4">
+                    <div class="bg-white/95 backdrop-blur-md px-4 py-1.5 rounded-full border-3 border-d-blue shadow-md flex items-center gap-3">
+                        <span id="round-indicator" class="font-fredoka font-bold text-xs text-d-blue uppercase tracking-wide">
+                            RONDE 1 / 5
+                        </span>
+                        <div class="w-1.5 h-1.5 rounded-full bg-slate-300"></div>
+                        <span id="status-text-banner" class="font-fredoka font-bold text-xs text-d-yellow flex items-center gap-1">
+                            <i class="fa-solid fa-headphones animate-bounce"></i> FOKUS DENGARKAN...
+                        </span>
+                    </div>
+                </div>
+
+                <!-- TAP ZONES CONTAINER (PARTITIONED ACCORDING TO PLAYER COUNT) -->
+                <div id="tap-zones-grid" class="w-full h-full grid relative">
+                    <!-- Dynamic Tap Zones will be rendered here -->
+                </div>
+
+                <!-- CENTER COIN ARENA & ANIMATION LAYER -->
+                <div id="center-arena" class="absolute inset-0 pointer-events-none flex items-center justify-center z-20">
+                    <!-- Animated Coin Element -->
+                    <div id="coin-target" class="absolute transition-all duration-500 ease-out transform">
+                        <div class="w-20 h-20 rounded-full bg-s-yellow border-4 border-d-yellow shadow-2xl flex items-center justify-center coin-anim relative">
+                            <div class="w-14 h-14 rounded-full border-2 border-dashed border-d-yellow/60 flex items-center justify-center bg-yellow-300">
+                                <i class="fa-solid fa-coins text-4xl text-d-yellow drop-shadow"></i>
+                            </div>
+
+                            <!-- Animated Cartoon Grab Hand Overlay (Appears on Grab) -->
+                            <div id="grab-hand-icon" class="absolute -inset-4 hidden flex items-center justify-center text-4xl text-amber-900 drop-shadow-lg z-30 pointer-events-none">
+                                🖐️
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </section>
+
+
+            <!-- ------------------------------------------------------------------ -->
+            <!-- SCREEN 3: LEADERBOARD / GAME OVER SCREEN -->
+            <!-- ------------------------------------------------------------------ -->
+            <section id="leaderboard-screen" class="w-full h-full hidden flex flex-col justify-between p-4 overflow-y-auto no-scrollbar">
+                
+                <!-- Winner Banner Header -->
+                <div class="text-center mt-2">
+                    <div class="w-16 h-16 mx-auto bg-s-yellow border-4 border-d-blue rounded-3xl flex items-center justify-center shadow-lg mb-2">
+                        <i class="fa-solid fa-trophy text-3xl text-d-yellow"></i>
+                    </div>
+                    <h2 class="font-fredoka font-black text-2xl text-d-blue uppercase">
+                        PERMAINAN SELESAI!
+                    </h2>
+                    <p class="text-xs font-bold text-slate-500">
+                        Hasil Akhir & Perolehan Koin SITMET.ea
+                    </p>
+                </div>
+
+                <!-- Winner Announcement Box -->
+                <div id="winner-announcement-card" class="bg-white rounded-3xl card-cartoon p-4 text-center my-2">
+                    <span class="text-xs font-bold font-fredoka text-slate-400 uppercase tracking-wider">JUARA 1</span>
+                    <h3 id="winner-name-display" class="font-fredoka font-black text-2xl text-d-blue my-1">
+                        Pemain 1
+                    </h3>
+                    <div id="winner-score-badge" class="inline-flex items-center gap-1.5 bg-yellow-100 border-2 border-d-yellow px-3 py-1 rounded-full text-d-yellow font-fredoka font-bold text-sm">
+                        <i class="fa-solid fa-coins"></i> <span id="winner-score-val">0 Poin</span>
+                    </div>
+                </div>
+
+                <!-- Full Rankings List -->
+                <div class="bg-white rounded-3xl card-cartoon p-3 flex-1 flex flex-col justify-center gap-2 mb-2">
+                    <h4 class="font-fredoka font-bold text-xs text-slate-500 uppercase text-center mb-1">
+                        Klasemen Akhir
+                    </h4>
+                    <div id="leaderboard-list-container" class="flex flex-col gap-2">
+                        <!-- Injected via JS -->
+                    </div>
+                </div>
+
+                <!-- Action Buttons Grid -->
+                <div class="grid grid-cols-2 gap-2">
+                    <button onclick="restartGameSamePlayers()" class="py-3 btn-pop-yellow rounded-2xl font-fredoka font-bold text-sm uppercase flex items-center justify-center gap-1.5">
+                        <i class="fa-solid fa-rotate-right"></i> MAIN LAGI
+                    </button>
+                    <button onclick="returnToSetupScreen()" class="py-3 btn-pop-blue rounded-2xl font-fredoka font-bold text-sm uppercase flex items-center justify-center gap-1.5">
+                        <i class="fa-solid fa-gear"></i> ATUR ULANG
+                    </button>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+
+    <!-- ====================================================================== -->
+    <!-- MODAL POPUP: TWO-TIER EXIT CONFIRMATION (STRICT DESIGN SPEC) -->
+    <!-- ====================================================================== -->
+    <div id="exit-modal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-md hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-[32px] border-[5px] border-d-blue shadow-2xl p-6 text-center w-full max-w-[340px] animate-pop-in">
+            
+            <!-- Icon Top: Red Circle with Exit Door -->
+            <div class="w-20 h-20 rounded-full border-[4px] border-h-red bg-red-100 mx-auto flex items-center justify-center mb-4 shadow-inner">
+                <i class="fa-solid fa-right-from-bracket text-h-red text-3xl"></i>
+            </div>
+
+            <!-- Titles & Descriptions Dynamic -->
+            <h3 id="exit-modal-title" class="font-fredoka font-black text-xl text-d-blue mb-1">
+                Batalkan Permainan?
+            </h3>
+            <p id="exit-modal-desc" class="font-quicksand font-bold text-xs text-slate-500 mb-6 px-2 leading-relaxed">
+                Yakin ingin membatalkan sesi game saat ini?
+            </p>
+
+            <!-- Buttons Grid (BATAL & YA, KELUAR) -->
+            <div class="grid grid-cols-2 gap-3">
+                <button onclick="closeExitModal()" class="py-3 btn-pop-blue rounded-2xl font-fredoka font-bold text-sm tracking-wide uppercase">
+                    BATAL
+                </button>
+                <button onclick="confirmExitAction()" class="py-3 btn-pop-red rounded-2xl font-fredoka font-bold text-sm tracking-wide uppercase">
+                    YA, KELUAR
+                </button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- ====================================================================== -->
+    <!-- AUDIO & JAVASCRIPT GAME LOGIC -->
+    <!-- ====================================================================== -->
+    <script>
+        /* ------------------------------------------------------------------ */
+        /* 1. AUDIO SYNTHESIZER (WEB AUDIO API - NO EXTERNAL MP3)            */
+        /* ------------------------------------------------------------------ */
+        let audioCtx = null;
+        let isMuted = false;
+
+        function initAudioContext() {
+            if (!audioCtx) {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                if (AudioContext) {
+                    audioCtx = new AudioContext();
+                }
+            }
+            if (audioCtx && audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        function toggleAudio() {
+            initAudioContext();
+            isMuted = !isMuted;
+            const icon = document.getElementById('audio-icon');
+            const btn = document.getElementById('audio-toggle-btn');
+            if (isMuted) {
+                icon.className = 'fa-solid fa-volume-xmark text-h-red';
+                btn.classList.add('bg-red-50');
+            } else {
+                icon.className = 'fa-solid fa-volume-high text-d-blue';
+                btn.classList.remove('bg-red-50');
+                playPopSound();
+            }
+        }
+
+        function playPopSound() {
+            if (isMuted) return;
+            initAudioContext();
+            if (!audioCtx) return;
+
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(400, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(800, audioCtx.currentTime + 0.08);
+
+            gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.08);
+
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.08);
+        }
+
+        // Random cute bird chirping
+        function playBirdChirp() {
+            if (isMuted) return;
+            initAudioContext();
+            if (!audioCtx) return;
+
+            const now = audioCtx.currentTime;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+
+            const startFreq = 2000 + Math.random() * 600;
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(startFreq, now);
+            osc.frequency.linearRampToValueAtTime(startFreq + 800, now + 0.05);
+            osc.frequency.linearRampToValueAtTime(startFreq + 200, now + 0.1);
+
+            gain.gain.setValueAtTime(0.1, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.12);
+
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            osc.start(now);
+            osc.stop(now + 0.12);
+        }
+
+        // Fake Distraction Chime (To test reaction under pressure)
+        function playDistractionSound() {
+            if (isMuted) return;
+            initAudioContext();
+            if (!audioCtx) return;
+
+            const now = audioCtx.currentTime;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+
+            // Low or unusual pitch to trick players
+            const freqs = [350, 480, 620, 850];
+            const chosenFreq = freqs[Math.floor(Math.random() * freqs.length)];
+
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(chosenFreq, now);
+            osc.frequency.exponentialRampToValueAtTime(chosenFreq * 0.7, now + 0.2);
+
+            gain.gain.setValueAtTime(0.25, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.22);
+
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            osc.start(now);
+            osc.stop(now + 0.22);
+        }
+
+        // REAL TRIGGER CUE SOUND: High-pitched sharp bell / ding sound (A6 + A7 harmonics)
+        function playTriggerCueSound() {
+            if (isMuted) return;
+            initAudioContext();
+            if (!audioCtx) return;
+
+            const now = audioCtx.currentTime;
+            
+            // Oscillator 1: Sharp Bell Fundamental
+            const osc1 = audioCtx.createOscillator();
+            const gain1 = audioCtx.createGain();
+            osc1.type = 'sine';
+            osc1.frequency.setValueAtTime(1760, now); // A6 note
+            gain1.gain.setValueAtTime(0.7, now);
+            gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
+
+            osc1.connect(gain1);
+            gain1.connect(audioCtx.destination);
+            osc1.start(now);
+            osc1.stop(now + 0.45);
+
+            // Oscillator 2: High Harmonics Ringing
+            const osc2 = audioCtx.createOscillator();
+            const gain2 = audioCtx.createGain();
+            osc2.type = 'triangle';
+            osc2.frequency.setValueAtTime(3520, now); // A7 note
+            gain2.gain.setValueAtTime(0.4, now);
+            gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+
+            osc2.connect(gain2);
+            gain2.connect(audioCtx.destination);
+            osc2.start(now);
+            osc2.stop(now + 0.35);
+        }
+
+        // Sound Whoosh Grab when coin is dragged
+        function playCoinGrabSound() {
+            if (isMuted) return;
+            initAudioContext();
+            if (!audioCtx) return;
+
+            const now = audioCtx.currentTime;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(600, now);
+            osc.frequency.exponentialRampToValueAtTime(1600, now + 0.15);
+
+            gain.gain.setValueAtTime(0.4, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.18);
+
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            osc.start(now);
+            osc.stop(now + 0.18);
+        }
+
+        // Penalty Stun Buzz Sound
+        function playPenaltySound() {
+            if (isMuted) return;
+            initAudioContext();
+            if (!audioCtx) return;
+
+            const now = audioCtx.currentTime;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(240, now);
+            osc.frequency.linearRampToValueAtTime(110, now + 0.25);
+
+            gain.gain.setValueAtTime(0.45, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            osc.start(now);
+            osc.stop(now + 0.3);
+        }
+
+        // Victory Chime Sound
+        function playVictorySound() {
+            if (isMuted) return;
+            initAudioContext();
+            if (!audioCtx) return;
+
+            const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+            notes.forEach((freq, idx) => {
+                const now = audioCtx.currentTime + idx * 0.12;
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(freq, now);
+
+                gain.gain.setValueAtTime(0.3, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                osc.start(now);
+                osc.stop(now + 0.2);
+            });
+        }
+
+
+        /* ------------------------------------------------------------------ */
+        /* 2. GAME STATE MANAGEMENT                                           */
+        /* ------------------------------------------------------------------ */
+        let currentScreen = 'setup'; // 'setup', 'gameplay', 'leaderboard'
+        let playerCount = 2;
+        let totalRounds = 5;
+        let currentRound = 1;
+        
+        let players = [
+            { id: 1, name: 'Pemain 1', score: 0, coinsCaptured: 0, color: '#EF4444', icon: 'fa-user-ninja', isStunned: false, stunTimer: null },
+            { id: 2, name: 'Pemain 2', score: 0, coinsCaptured: 0, color: '#3B82F6', icon: 'fa-robot', isStunned: false, stunTimer: null },
+            { id: 3, name: 'Pemain 3', score: 0, coinsCaptured: 0, color: '#10B981', icon: 'fa-cat', isStunned: false, stunTimer: null },
+            { id: 4, name: 'Pemain 4', score: 0, coinsCaptured: 0, color: '#F59E0B', icon: 'fa-dragon', isStunned: false, stunTimer: null }
+        ];
+
+        // Gameplay Round State
+        let isWaitingForTrigger = false;
+        let isTriggerActive = false;
+        let isRoundLocked = false;
+        let roundTimer = null;
+        let ambientAudioLoop = null;
+
+
+        /* ------------------------------------------------------------------ */
+        /* 3. NAVIGATION & TWO-TIER EXIT SYSTEM                               */
+        /* ------------------------------------------------------------------ */
+        function handleExitClick() {
+            playPopSound();
+            const modal = document.getElementById('exit-modal');
+            const titleEl = document.getElementById('exit-modal-title');
+            const descEl = document.getElementById('exit-modal-desc');
+
+            if (currentScreen === 'setup') {
+                titleEl.textContent = 'Kembali ke Dashboard?';
+                descEl.textContent = 'Yakin ingin keluar ke dashboard utama?';
+            } else {
+                titleEl.textContent = 'Batalkan Permainan?';
+                descEl.textContent = 'Yakin ingin membatalkan sesi game saat ini?';
+            }
+
+            modal.classList.remove('hidden');
+        }
+
+        function closeExitModal() {
+            playPopSound();
+            document.getElementById('exit-modal').classList.add('hidden');
+        }
+
+        function confirmExitAction() {
+            playPopSound();
+            document.getElementById('exit-modal').classList.add('hidden');
+
+            if (currentScreen === 'setup') {
+                // Tier 1: Setup -> Main Dashboard Redirect
+                window.location.href = 'index.html';
+            } else {
+                // Tier 2: Mid-game / Leaderboard -> Setup Screen
+                resetToSetupScreen();
+            }
+        }
+
+        function resetToSetupScreen() {
+            clearTimers();
+            resetAllPlayerStuns();
+            currentScreen = 'setup';
+            showScreen('setup-screen');
+        }
+
+        function returnToSetupScreen() {
+            playPopSound();
+            resetToSetupScreen();
+        }
+
+        function showScreen(screenId) {
+            document.getElementById('setup-screen').classList.add('hidden');
+            document.getElementById('gameplay-screen').classList.add('hidden');
+            document.getElementById('leaderboard-screen').classList.add('hidden');
+
+            document.getElementById(screenId).classList.remove('hidden');
+        }
+
+
+        /* ------------------------------------------------------------------ */
+        /* 4. SETUP SCREEN CONTROLS                                           */
+        /* ------------------------------------------------------------------ */
+        function setPlayerCount(count) {
+            playPopSound();
+            playerCount = count;
+            
+            // Highlight selected button
+            [2, 3, 4].forEach(c => {
+                const btn = document.getElementById(`btn-pcount-${c}`);
+                if (c === count) {
+                    btn.className = 'pcount-btn py-2 rounded-2xl font-fredoka font-bold text-base transition-all btn-pop-yellow';
+                } else {
+                    btn.className = 'pcount-btn py-2 rounded-2xl font-fredoka font-bold text-base transition-all bg-slate-100 border-2 border-slate-300 text-slate-600';
+                }
+            });
+
+            renderPlayerInputs();
+        }
+
+        function setTotalRounds(rounds) {
+            playPopSound();
+            totalRounds = rounds;
+
+            [5, 10, 15].forEach(r => {
+                const btn = document.getElementById(`btn-round-${r}`);
+                if (r === rounds) {
+                    btn.className = 'round-btn py-1.5 rounded-xl font-fredoka font-bold text-xs btn-pop-blue';
+                } else {
+                    btn.className = 'round-btn py-1.5 rounded-xl font-fredoka font-bold text-xs bg-slate-100 border-2 border-slate-300 text-slate-600';
+                }
+            });
+        }
+
+        function renderPlayerInputs() {
+            const container = document.getElementById('player-inputs-container');
+            container.innerHTML = '';
+
+            const icons = ['fa-user-ninja', 'fa-robot', 'fa-cat', 'fa-dragon'];
+            const colors = ['border-p1-color text-p1-color', 'border-p2-color text-p2-color', 'border-p3-color text-p3-color', 'border-p4-color text-p4-color'];
+
+            for (let i = 0; i < playerCount; i++) {
+                const div = document.createElement('div');
+                div.className = 'flex items-center gap-2';
+                div.innerHTML = `
+                    <div class="w-8 h-8 rounded-xl border-2 ${colors[i]} bg-slate-50 flex items-center justify-center shrink-0">
+                        <i class="fa-solid ${icons[i]} text-sm"></i>
+                    </div>
+                    <input type="text" id="pinput-${i+1}" value="${players[i].name}" maxLength="12"
+                        class="w-full bg-slate-50 border-2 border-slate-300 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-700 font-fredoka focus:outline-none focus:border-d-blue transition-colors">
+                `;
+                container.appendChild(div);
+            }
+        }
+
+        /* ------------------------------------------------------------------ */
+        /* 5. GAMEPLAY ZONES LAYOUT                                           */
+        /* ------------------------------------------------------------------ */
+        function startGame() {
+            initAudioContext();
+            playPopSound();
+
+            // Save player names from input fields
+            for (let i = 0; i < playerCount; i++) {
+                const inputVal = document.getElementById(`pinput-${i+1}`).value.trim();
+                players[i].name = inputVal !== '' ? inputVal : `Pemain ${i+1}`;
+                players[i].score = 0;
+                players[i].coinsCaptured = 0;
+                players[i].isStunned = false;
+            }
+
+            currentRound = 1;
+            currentScreen = 'gameplay';
+            showScreen('gameplay-screen');
+
+            renderTapZones();
+            resetCoinPosition();
+            startNewRound();
+        }
+
+        function renderTapZones() {
+            const grid = document.getElementById('tap-zones-grid');
+            grid.innerHTML = '';
+
+            if (playerCount === 2) {
+                grid.className = 'w-full h-full grid grid-rows-2 gap-0 relative';
+            } else if (playerCount === 3) {
+                grid.className = 'w-full h-full grid grid-cols-2 grid-rows-2 gap-0 relative';
+            } else if (playerCount === 4) {
+                grid.className = 'w-full h-full grid grid-cols-2 grid-rows-2 gap-0 relative';
+            }
+
+            for (let i = 0; i < playerCount; i++) {
+                const p = players[i];
+                const zone = document.createElement('div');
+                zone.id = `player-zone-${p.id}`;
+                
+                let gridSpan = '';
+                if (playerCount === 3 && i === 2) {
+                    gridSpan = 'col-span-2';
+                }
+
+                zone.className = `relative flex flex-col items-center justify-center p-4 border-2 border-d-blue/20 transition-all select-none overflow-hidden ${gridSpan}`;
+                zone.style.backgroundColor = getSoftBgColor(i);
+
+                zone.innerHTML = `
+                    <!-- Player Tag & Score Badge -->
+                    <div class="flex flex-col items-center gap-1 z-0">
+                        <div class="w-12 h-12 rounded-2xl border-3 border-d-blue flex items-center justify-center shadow-md text-white text-xl" style="background-color: ${p.color}">
+                            <i class="fa-solid ${p.icon}"></i>
+                        </div>
+                        <span class="font-fredoka font-extrabold text-xs tracking-wide text-d-blue bg-white/80 backdrop-blur-sm px-2.5 py-0.5 rounded-full border border-d-blue/30">
+                            ${p.name}
+                        </span>
+                        <div id="pscore-badge-${p.id}" class="font-fredoka font-black text-sm text-slate-700 bg-white px-3 py-1 rounded-xl border-2 border-d-blue shadow-sm flex items-center gap-1">
+                            <i class="fa-solid fa-coins text-d-yellow"></i> <span id="pscore-val-${p.id}">0</span>
+                        </div>
+                    </div>
+
+                    <!-- Penalty Stun Overlay (2-Second Dizzy Stars & Lock) -->
+                    <div id="pstun-overlay-${p.id}" class="absolute inset-0 hidden flex flex-col items-center justify-center bg-black/60 backdrop-blur-[2px] z-30 p-2 text-center">
+                        <div class="text-3xl dizzy-stars mb-1">💫😵💫</div>
+                        <span id="pstun-text-${p.id}" class="font-fredoka font-black text-xs text-yellow-300 bg-red-600 px-2.5 py-1 rounded-xl border-2 border-white shadow-lg uppercase tracking-wider">
+                            STUN! 2s
+                        </span>
+                    </div>
+
+                    <!-- Instant Score Success Feedback Overlay -->
+                    <div id="pfeedback-${p.id}" class="absolute inset-0 hidden flex items-center justify-center bg-black/40 backdrop-blur-[2px] z-20 p-2">
+                        <span id="pfeedback-text-${p.id}" class="font-fredoka font-black text-sm px-3 py-1.5 rounded-xl border-3 border-d-blue shadow-lg text-center animate-bounce">
+                            <!-- Feedback injected JS -->
+                        </span>
+                    </div>
+                `;
+
+                // Pointerdown event for rapid mobile response
+                zone.addEventListener('pointerdown', (e) => {
+                    e.preventDefault();
+                    handlePlayerTap(p.id);
+                });
+
+                grid.appendChild(zone);
+            }
+        }
+
+        function getSoftBgColor(index) {
+            const colors = ['#FEE2E2', '#DBEAFE', '#D1FAE5', '#FEF3C7'];
+            return colors[index % colors.length];
+        }
+
+
+        /* ------------------------------------------------------------------ */
+        /* 6. GAMEPLAY ROUND ENGINE, STUN MECHANIC & AUDIO DISTRACTION       */
+        /* ------------------------------------------------------------------ */
+        function startNewRound() {
+            clearTimers();
+            resetCoinPosition();
+            isWaitingForTrigger = true;
+            isTriggerActive = false;
+            isRoundLocked = false;
+
+            // Update Header Banner Status
+            document.getElementById('round-indicator').textContent = `RONDE ${currentRound} / ${totalRounds}`;
+            document.getElementById('status-text-banner').innerHTML = `<i class="fa-solid fa-headphones animate-bounce"></i> FOKUS DENGARKAN...`;
+
+            // Hide success feedback overlays (keep stuns intact if active)
+            for (let i = 1; i <= playerCount; i++) {
+                const fb = document.getElementById(`pfeedback-${i}`);
+                if (fb) fb.classList.add('hidden');
+            }
+
+            // Extreme randomized suspense delay: 1s to 7.5s before Cue bell
+            const cueDelay = Math.floor(Math.random() * 6500) + 1000;
+
+            // Dynamic Ambient Audio Loop (Bird Chirps + Fake Distraction Notes)
+            scheduleAmbientDistractions();
+
+            roundTimer = setTimeout(() => {
+                triggerCueSignal();
+            }, cueDelay);
+        }
+
+        function scheduleAmbientDistractions() {
+            // Random interval chirps or pitch distractions every 1.2s to 2.5s
+            let nextDelay = Math.floor(Math.random() * 1300) + 1200;
+            
+            ambientAudioLoop = setTimeout(() => {
+                if (isWaitingForTrigger) {
+                    if (Math.random() > 0.45) {
+                        playBirdChirp();
+                    } else if (Math.random() > 0.6) {
+                        // Play distraction fake note to trick players
+                        playDistractionSound();
+                    }
+                    scheduleAmbientDistractions();
+                }
+            }, nextDelay);
+        }
+
+        function triggerCueSignal() {
+            if (!isWaitingForTrigger) return;
+
+            isWaitingForTrigger = false;
+            isTriggerActive = true;
+
+            clearTimeout(ambientAudioLoop);
+
+            // REAL CUE BELL SOUND (Strict Audio Trigger)
+            playTriggerCueSound();
+        }
+
+        function handlePlayerTap(playerId) {
+            if (isRoundLocked) return; // Round resolved, ignore inputs
+
+            const player = players.find(p => p.id === playerId);
+            if (!player) return;
+
+            // STUN CHECK: If player is currently stunned, reject tap
+            if (player.isStunned) {
+                return;
+            }
+
+            if (isWaitingForTrigger) {
+                // PREMATURE TAP PENALTY (-50 pts + Screen Shake + 2s STUN)
+                playPenaltySound();
+
+                player.score = Math.max(-500, player.score - 50);
+                updateScoresUI();
+
+                // Apply Screen Shake to Player's Zone
+                const zoneEl = document.getElementById(`player-zone-${playerId}`);
+                if (zoneEl) {
+                    zoneEl.classList.remove('shake-effect');
+                    void zoneEl.offsetWidth; // Trigger reflow
+                    zoneEl.classList.add('shake-effect');
+                }
+
+                // Apply Stun 2 Seconds
+                applyPlayerStun(player);
+
+            } else if (isTriggerActive) {
+                // SUCCESSFUL TAP AFTER CUE! (+100 pts + Coin Drag Hand Animation)
+                isRoundLocked = true;
+                isTriggerActive = false;
+                clearTimers();
+
+                player.score += 100;
+                player.coinsCaptured += 1;
+                updateScoresUI();
+
+                // Play Whoosh Grab Sound
+                playCoinGrabSound();
+
+                // Trigger Hand Coin Drag Animation toward winning Player's Zone
+                animateCoinGrabToPlayer(playerId, () => {
+                    showPlayerFeedback(playerId, `DAPAT KOIN! +100 🪙`, 'bg-s-yellow text-d-blue border-d-yellow');
+
+                    // Advance to next round or end game after short pause
+                    setTimeout(() => {
+                        if (currentRound < totalRounds) {
+                            currentRound++;
+                            startNewRound();
+                        } else {
+                            endGameAndShowLeaderboard();
+                        }
+                    }, 1400);
+                });
+            }
+        }
+
+        /* ------------------------------------------------------------------ */
+        /* 7. COIN DRAG & STUN SYSTEM ANIMATIONS                             */
+        /* ------------------------------------------------------------------ */
+        function applyPlayerStun(player) {
+            player.isStunned = true;
+            const overlay = document.getElementById(`pstun-overlay-${player.id}`);
+            const textEl = document.getElementById(`pstun-text-${player.id}`);
+
+            if (overlay) overlay.classList.remove('hidden');
+
+            let secondsLeft = 2;
+            if (textEl) textEl.textContent = `STUN! ${secondsLeft}s 😵`;
+
+            if (player.stunTimer) clearInterval(player.stunTimer);
+
+            player.stunTimer = setInterval(() => {
+                secondsLeft--;
+                if (secondsLeft > 0) {
+                    if (textEl) textEl.textContent = `STUN! ${secondsLeft}s 😵`;
+                } else {
+                    clearInterval(player.stunTimer);
+                    player.isStunned = false;
+                    if (overlay) overlay.classList.add('hidden');
+                }
+            }, 1000);
+        }
+
+        function resetAllPlayerStuns() {
+            players.forEach(p => {
+                p.isStunned = false;
+                if (p.stunTimer) clearInterval(p.stunTimer);
+                const overlay = document.getElementById(`pstun-overlay-${p.id}`);
+                if (overlay) overlay.classList.add('hidden');
+            });
+        }
+
+        function animateCoinGrabToPlayer(playerId, callback) {
+            const coinEl = document.getElementById('coin-target');
+            const handIcon = document.getElementById('grab-hand-icon');
+            const targetZone = document.getElementById(`player-zone-${playerId}`);
+            const arena = document.getElementById('center-arena');
+
+            if (!coinEl || !targetZone || !arena) {
+                if (callback) callback();
+                return;
+            }
+
+            // Show Cartoon Grab Hand
+            if (handIcon) handIcon.classList.remove('hidden');
+
+            // Calculate translation offset relative to center arena
+            const arenaRect = arena.getBoundingClientRect();
+            const zoneRect = targetZone.getBoundingClientRect();
+
+            const targetCenterX = zoneRect.left + zoneRect.width / 2;
+            const targetCenterY = zoneRect.top + zoneRect.height / 2;
+
+            const arenaCenterX = arenaRect.left + arenaRect.width / 2;
+            const arenaCenterY = arenaRect.top + arenaRect.height / 2;
+
+            const deltaX = targetCenterX - arenaCenterX;
+            const deltaY = targetCenterY - arenaCenterY;
+
+            // Translate coin smooth to player corner
+            coinEl.style.transform = `translate(${deltaX}px, ${deltaY}px) scale(1.2)`;
+            coinEl.style.opacity = '0.9';
+
+            setTimeout(() => {
+                if (handIcon) handIcon.classList.add('hidden');
+                if (callback) callback();
+            }, 550);
+        }
+
+        function resetCoinPosition() {
+            const coinEl = document.getElementById('coin-target');
+            const handIcon = document.getElementById('grab-hand-icon');
+            if (handIcon) handIcon.classList.add('hidden');
+
+            if (coinEl) {
+                coinEl.style.transform = 'translate(0px, 0px) scale(1)';
+                coinEl.style.opacity = '1';
+            }
+        }
+
+        function showPlayerFeedback(playerId, text, styleClasses) {
+            const fb = document.getElementById(`pfeedback-${playerId}`);
+            const fbText = document.getElementById(`pfeedback-text-${playerId}`);
+
+            if (fb && fbText) {
+                fbText.className = `font-fredoka font-black text-sm px-3 py-1.5 rounded-xl border-3 shadow-lg text-center animate-bounce ${styleClasses}`;
+                fbText.textContent = text;
+                fb.classList.remove('hidden');
+            }
+        }
+
+        function updateScoresUI() {
+            for (let i = 1; i <= playerCount; i++) {
+                const el = document.getElementById(`pscore-val-${i}`);
+                if (el) {
+                    const p = players.find(item => item.id === i);
+                    if (p) el.textContent = p.score;
+                }
+            }
+        }
+
+        function clearTimers() {
+            if (roundTimer) clearTimeout(roundTimer);
+            if (ambientAudioLoop) clearTimeout(ambientAudioLoop);
+        }
+
+
+        /* ------------------------------------------------------------------ */
+        /* 8. LEADERBOARD & WINNER ANNOUNCEMENT                               */
+        /* ------------------------------------------------------------------ */
+        function endGameAndShowLeaderboard() {
+            clearTimers();
+            resetAllPlayerStuns();
+
+            currentScreen = 'leaderboard';
+            showScreen('leaderboard-screen');
+
+            playVictorySound();
+
+            // Canvas Confetti Celebration
+            if (typeof confetti === 'function') {
+                confetti({
+                    particleCount: 90,
+                    spread: 75,
+                    origin: { y: 0.6 }
+                });
+            }
+
+            // Sort players descending by score
+            const ranked = [...players.slice(0, playerCount)].sort((a, b) => b.score - a.score);
+
+            // Winner Display
+            const winner = ranked[0];
+            document.getElementById('winner-name-display').textContent = winner.name;
+            document.getElementById('winner-score-val').textContent = `${winner.score} Poin (${winner.coinsCaptured} Koin)`;
+
+            // Render Rankings List
+            const container = document.getElementById('leaderboard-list-container');
+            container.innerHTML = '';
+
+            const medals = ['🥇', '🥈', '🥉', '4️⃣'];
+
+            ranked.forEach((p, idx) => {
+                const item = document.createElement('div');
+                item.className = 'flex items-center justify-between bg-slate-50 border-2 border-d-blue/20 rounded-2xl px-3 py-2';
+                item.innerHTML = `
+                    <div class="flex items-center gap-2">
+                        <span class="text-base font-bold">${medals[idx]}</span>
+                        <span class="font-fredoka font-bold text-xs text-d-blue">${p.name}</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="font-fredoka text-[11px] text-slate-500 font-bold">${p.coinsCaptured} 🪙</span>
+                        <div class="font-fredoka font-extrabold text-xs text-slate-700 bg-white px-2.5 py-0.5 rounded-lg border border-d-blue/20">
+                            ${p.score} Poin
+                        </div>
+                    </div>
+                `;
+                container.appendChild(item);
+            });
+        }
+
+        function restartGameSamePlayers() {
+            playPopSound();
+            for (let i = 0; i < playerCount; i++) {
+                players[i].score = 0;
+                players[i].coinsCaptured = 0;
+                players[i].isStunned = false;
+            }
+            currentRound = 1;
+            currentScreen = 'gameplay';
+            showScreen('gameplay-screen');
+            renderTapZones();
+            resetCoinPosition();
+            startNewRound();
+        }
+
+
+        /* ------------------------------------------------------------------ */
+        /* 9. INITIALIZATION ON WINDOW LOAD                                   */
+        /* ------------------------------------------------------------------ */
+        window.onload = function() {
+            setPlayerCount(2);
+            setTotalRounds(5);
+        };
+    </script>
+
+</body>
+</html>

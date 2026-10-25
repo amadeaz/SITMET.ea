@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Truth or Dare - SITMET.ea Arcade</title>
+
+    <!-- Google Fonts: Fredoka & Quicksand -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Quicksand:wght@500;600;700&display=swap" rel="stylesheet">
+
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Canvas Confetti CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'p-blue': '#3B82F6',
+                        'd-blue': '#1D4ED8',
+                        's-yellow': '#FACC15',
+                        'd-yellow': '#CA8A04',
+                        'h-red': '#EF4444',
+                        'd-red': '#991B1B',
+                        'bg-sky': '#EFF6FF',
+                        'bg-cream': '#FEFCE8'
+                    },
+                    fontFamily: {
+                        'fredoka': ['Fredoka', 'sans-serif'],
+                        'quicksand': ['Quicksand', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* Custom UI and Buttons styling */
+        body {
+            font-family: 'Quicksand', sans-serif;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+            background-color: #0f172a;
+        }
+
+        /* 3D Cartoon Pop Buttons */
+        .btn-pop-yellow {
+            background-color: #FACC15;
+            color: #1E293B;
+            border: 4px solid #1D4ED8;
+            box-shadow: 0px 5px 0px 0px #CA8A04;
+        }
+        .btn-pop-yellow:active {
+            transform: translateY(4px);
+            box-shadow: 0px 1px 0px 0px #CA8A04;
+        }
+
+        .btn-pop-blue {
+            background-color: #3B82F6;
+            color: #FFFFFF;
+            border: 4px solid #1D4ED8;
+            box-shadow: 0px 5px 0px 0px #1D4ED8;
+        }
+        .btn-pop-blue:active {
+            transform: translateY(4px);
+            box-shadow: 0px 1px 0px 0px #1D4ED8;
+        }
+
+        .btn-pop-red {
+            background-color: #EF4444;
+            color: #FFFFFF;
+            border: 3px solid #991B1B;
+            box-shadow: 0px 4px 0px 0px #991B1B;
+        }
+        .btn-pop-red:active {
+            transform: translateY(3px);
+            box-shadow: 0px 1px 0px 0px #991B1B;
+        }
+
+        .btn-pop-green {
+            background-color: #22C55E;
+            color: #FFFFFF;
+            border: 4px solid #15803D;
+            box-shadow: 0px 5px 0px 0px #15803D;
+        }
+        .btn-pop-green:active {
+            transform: translateY(4px);
+            box-shadow: 0px 1px 0px 0px #15803D;
+        }
+
+        /* Card 3D Flip Effects */
+        .perspective-1000 {
+            perspective: 1000px;
+        }
+        .transform-style-3d {
+            transform-style: preserve-3d;
+            transition: transform 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .backface-hidden {
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+        }
+        .rotate-y-180 {
+            transform: rotateY(180deg);
+        }
+
+        /* Cartoon Shuffle Animations */
+        @keyframes shuffleLeft {
+            0%, 100% { transform: translateX(0) rotate(0deg); }
+            50% { transform: translateX(-45px) rotate(-12deg); }
+        }
+        @keyframes shuffleRight {
+            0%, 100% { transform: translateX(0) rotate(0deg); }
+            50% { transform: translateX(45px) rotate(12deg); }
+        }
+        .anim-shuffle-left { animation: shuffleLeft 0.4s ease-in-out infinite; }
+        .anim-shuffle-right { animation: shuffleRight 0.4s ease-in-out infinite; }
+
+        @keyframes popIn {
+            0% { transform: scale(0.7); opacity: 0; }
+            80% { transform: scale(1.05); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .animate-pop-in {
+            animation: popIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        }
+
+        /* Hide Scrollbar */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-0 sm:p-4 bg-slate-900">
+
+    <!-- MAIN ARCADE FRAME CONTAINER -->
+    <div id="arcade-container" class="relative w-full max-w-[400px] h-[100dvh] bg-bg-sky border-0 sm:border-[6px] border-d-blue rounded-none sm:rounded-[36px] overflow-hidden flex flex-col justify-between shadow-2xl">
+
+        <!-- 1. PERMANENT TOP STATUS BAR -->
+        <header class="w-full bg-white border-b-4 border-d-blue px-4 py-2.5 flex items-center justify-between z-20 shrink-0">
+            <!-- Logo & Title -->
+            <div class="flex items-center gap-2">
+                <div class="w-8 h-8 rounded-xl bg-s-yellow border-2 border-d-blue flex items-center justify-center text-d-blue font-fredoka font-bold text-lg shadow-sm">
+                    ⚡
+                </div>
+                <span class="font-fredoka font-bold text-d-blue text-lg tracking-wide uppercase">Truth / Dare</span>
+            </div>
+
+            <!-- Controls (Sound & Exit) -->
+            <div class="flex items-center gap-2">
+                <!-- Sound Toggle -->
+                <button id="sound-toggle-btn" onclick="toggleSound()" aria-label="Toggle Sound" class="w-9 h-9 bg-bg-sky border-2 border-d-blue rounded-xl flex items-center justify-center text-d-blue font-bold text-base hover:bg-blue-100 transition-all active:scale-95">
+                    <i id="sound-icon" class="fa-solid fa-volume-high"></i>
+                </button>
+
+                <!-- Exit Button (✕) -->
+                <button onclick="handleExitClick()" aria-label="Keluar Game" class="w-9 h-9 btn-pop-red rounded-xl flex items-center justify-center font-fredoka font-extrabold text-lg transition-transform">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- 2. GAME SETUP SCREEN (DEFAULT VIEW) -->
+        <main id="setup-screen" class="flex-1 flex flex-col justify-between p-4 overflow-y-auto no-scrollbar z-10">
+            <div class="flex flex-col items-center">
+                <!-- Mascot & Title Card -->
+                <div class="w-full bg-white border-[4px] border-d-blue rounded-3xl p-4 text-center shadow-md mb-4 mt-1">
+                    <div class="w-16 h-16 bg-s-yellow border-[3px] border-d-blue rounded-2xl mx-auto mb-2 flex items-center justify-center text-3xl shadow-sm rotate-3">
+                        🎲
+                    </div>
+                    <h1 class="font-fredoka text-2xl font-bold text-d-blue tracking-tight">SIAP MAIN?</h1>
+                    <p class="text-xs text-slate-600 font-semibold mt-1">Tambahkan 2 hingga 5 pemain untuk kocok tantangan seru!</p>
+                </div>
+
+                <!-- Player Input List Section -->
+                <div class="w-full bg-white border-[4px] border-d-blue rounded-3xl p-4 shadow-md">
+                    <div class="flex items-center justify-between mb-3">
+                        <span class="font-fredoka font-bold text-d-blue text-sm uppercase tracking-wider">Daftar Pemain (<span id="player-count-text">2</span>/5)</span>
+                        <span class="text-xs bg-bg-sky text-d-blue font-bold px-2 py-0.5 rounded-full border border-d-blue">Min 2</span>
+                    </div>
+
+                    <!-- Dynamic Player Input Rows -->
+                    <div id="player-inputs-container" class="space-y-2.5 max-h-[220px] overflow-y-auto no-scrollbar pr-0.5">
+                        <!-- Default Row 1 -->
+                        <div class="player-input-row flex items-center gap-2">
+                            <div class="w-9 h-9 rounded-xl border-2 border-d-blue bg-blue-400 flex items-center justify-center text-white font-bold font-fredoka text-sm shadow-sm">
+                                1
+                            </div>
+                            <input type="text" value="Pemain 1" maxlength="12" class="player-name-input flex-1 bg-bg-sky border-2 border-d-blue rounded-xl px-3 py-1.5 font-fredoka text-d-blue text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-s-yellow">
+                            <button onclick="removePlayerInput(this)" class="btn-remove-player w-8 h-8 bg-gray-200 text-gray-400 border-2 border-gray-400 rounded-xl flex items-center justify-center text-xs font-bold transition-all" disabled>
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                        </div>
+                        <!-- Default Row 2 -->
+                        <div class="player-input-row flex items-center gap-2">
+                            <div class="w-9 h-9 rounded-xl border-2 border-d-blue bg-amber-400 flex items-center justify-center text-white font-bold font-fredoka text-sm shadow-sm">
+                                2
+                            </div>
+                            <input type="text" value="Pemain 2" maxlength="12" class="player-name-input flex-1 bg-bg-sky border-2 border-d-blue rounded-xl px-3 py-1.5 font-fredoka text-d-blue text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-s-yellow">
+                            <button onclick="removePlayerInput(this)" class="btn-remove-player w-8 h-8 bg-gray-200 text-gray-400 border-2 border-gray-400 rounded-xl flex items-center justify-center text-xs font-bold transition-all" disabled>
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Add Player Button -->
+                    <button id="add-player-btn" onclick="addPlayerInput()" class="w-full mt-3 py-2 border-2 border-dashed border-d-blue rounded-xl text-d-blue font-fredoka font-bold text-xs flex items-center justify-center gap-2 hover:bg-blue-50 transition-colors">
+                        <i class="fa-solid fa-user-plus"></i> Tambah Pemain
+                    </button>
+                </div>
+            </div>
+
+            <!-- Start Game CTA Button -->
+            <div class="w-full pt-2">
+                <button onclick="startGameSession()" class="w-full py-3.5 btn-pop-yellow rounded-2xl font-fredoka font-bold text-xl uppercase tracking-wider flex items-center justify-center gap-2 transition-transform">
+                    <i class="fa-solid fa-play"></i> MULAI MAIN!
+                </button>
+            </div>
+        </main>
+
+        <!-- 3. GAMEPLAY SCREEN (HIDDEN BY DEFAULT) -->
+        <main id="gameplay-screen" class="hidden flex-1 flex-col justify-between p-4 z-10">
+            <!-- Active Player Banner -->
+            <div class="w-full bg-white border-[4px] border-d-blue rounded-2xl p-3 shadow-md flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div id="active-player-avatar" class="w-11 h-11 rounded-xl border-2 border-d-blue bg-s-yellow flex items-center justify-center text-d-blue font-fredoka font-bold text-xl shadow-sm">
+                        👤
+                    </div>
+                    <div>
+                        <div class="text-[10px] font-bold text-gray-400 uppercase tracking-widest font-fredoka">Gilirannya</div>
+                        <div id="active-player-name" class="font-fredoka font-bold text-lg text-d-blue leading-tight truncate max-w-[160px]">
+                            Pemain 1
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-bg-cream border-2 border-d-yellow text-d-yellow font-fredoka font-bold text-xs px-2.5 py-1 rounded-xl flex items-center gap-1">
+                    <span>🎯</span> Ready!
+                </div>
+            </div>
+
+            <!-- Interactive Deck Center Area -->
+            <div class="relative flex-1 flex flex-col items-center justify-center my-4">
+
+                <!-- Dynamic Shuffling / Flip Card -->
+                <div class="perspective-1000 w-full max-w-[260px] h-[340px]">
+                    <div id="main-card-inner" class="transform-style-3d relative w-full h-full">
+
+                        <!-- CARD FRONT: SHUFFLE DECK VIEW -->
+                        <div class="backface-hidden absolute inset-0 w-full h-full bg-white border-[5px] border-d-blue rounded-[32px] p-4 flex flex-col items-center justify-between shadow-xl">
+                            <!-- Deck Header -->
+                            <div class="w-full flex items-center justify-between">
+                                <span class="font-fredoka font-bold text-xs text-d-blue bg-blue-100 border border-d-blue px-2 py-0.5 rounded-full">TRUTH OR DARE</span>
+                                <span class="text-xs text-slate-400 font-bold">#SITMET</span>
+                            </div>
+
+                            <!-- Cartoon Cards Graphic -->
+                            <div class="relative w-36 h-36 flex items-center justify-center my-2">
+                                <div id="sub-card-1" class="absolute w-28 h-36 bg-s-yellow border-[4px] border-d-blue rounded-2xl shadow-md transform -rotate-6 flex items-center justify-center text-2xl font-fredoka font-bold text-d-blue">
+                                    ?
+                                </div>
+                                <div id="sub-card-2" class="absolute w-28 h-36 bg-p-blue border-[4px] border-d-blue rounded-2xl shadow-md transform rotate-6 flex items-center justify-center text-2xl font-fredoka font-bold text-white">
+                                    ?
+                                </div>
+                                <div id="sub-card-top" class="absolute w-28 h-36 bg-white border-[4px] border-d-blue rounded-2xl shadow-lg flex flex-col items-center justify-center">
+                                    <div class="w-12 h-12 rounded-full bg-bg-sky border-2 border-d-blue flex items-center justify-center text-2xl">
+                                        ⚡
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Action Instruction -->
+                            <div class="text-center">
+                                <p class="font-fredoka font-bold text-d-blue text-sm">Tekan tombol di bawah</p>
+                                <p class="text-[11px] text-slate-500 font-semibold">untuk kocok kartu kamu!</p>
+                            </div>
+                        </div>
+
+                        <!-- CARD BACK: REVEAL RESULT VIEW -->
+                        <div id="card-back-view" class="backface-hidden rotate-y-180 absolute inset-0 w-full h-full bg-white border-[5px] border-d-blue rounded-[32px] p-5 flex flex-col items-center justify-between shadow-xl">
+                            <!-- Result Header Badge -->
+                            <div id="result-badge" class="w-full py-1.5 px-3 rounded-xl border-2 border-d-blue text-center font-fredoka font-bold text-sm tracking-wider uppercase text-white bg-p-blue shadow-sm">
+                                HASIL KOCOKAN
+                            </div>
+
+                            <!-- Result Graphic Icon -->
+                            <div id="result-icon-container" class="w-24 h-24 rounded-3xl border-[4px] border-d-blue bg-s-yellow flex items-center justify-center text-5xl shadow-md my-2">
+                                🤐
+                            </div>
+
+                            <!-- Result Type Title -->
+                            <div class="text-center">
+                                <div id="result-type-text" class="font-fredoka font-extrabold text-3xl text-d-blue uppercase tracking-wide">
+                                    TRUTH
+                                </div>
+                                <p id="result-desc-text" class="text-xs text-slate-600 font-bold mt-1 px-2">
+                                    Pemain siap menerima tantangan atau kejujuran dari teman-teman!
+                                </p>
+                            </div>
+
+                            <!-- Bottom Ribbon Note -->
+                            <div class="w-full bg-bg-sky border-2 border-d-blue rounded-xl py-1.5 text-center text-[10px] font-bold text-d-blue">
+                                SILAKAN TEMAN-TEMAN TENTUKAN!
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Action Controls Bottom Bar -->
+            <div id="controls-front" class="w-full">
+                <button id="shuffle-btn" onclick="shuffleAndReveal()" class="w-full py-3.5 btn-pop-yellow rounded-2xl font-fredoka font-bold text-xl uppercase tracking-wider flex items-center justify-center gap-2 transition-transform">
+                    <i class="fa-solid fa-shuffle"></i> KOCOK KARTU!
+                </button>
+            </div>
+
+            <div id="controls-back" class="w-full hidden flex-col gap-2">
+                <button onclick="nextTurn()" class="w-full py-3.5 btn-pop-green rounded-2xl font-fredoka font-bold text-lg uppercase tracking-wider flex items-center justify-center gap-2 transition-transform">
+                    NEXT PEMAIN <i class="fa-solid fa-arrow-right"></i>
+                </button>
+            </div>
+        </main>
+
+        <!-- 4. MODAL POP-UP CONFIRMATION EXIT (TWO-TIER EXIT SYSTEM) -->
+        <div id="exit-modal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 animate-pop-in">
+            <div class="w-full max-w-[340px] bg-white rounded-[32px] border-[5px] border-d-blue shadow-2xl p-6 text-center">
+                
+                <!-- Icon Top Red Circle -->
+                <div class="w-20 h-20 rounded-full border-[4px] border-h-red bg-red-100 flex items-center justify-center mx-auto mb-4">
+                    <i class="fa-solid fa-right-from-bracket text-h-red text-3xl"></i>
+                </div>
+
+                <!-- Title & Description -->
+                <h3 id="exit-modal-title" class="font-fredoka font-bold text-2xl text-d-blue mb-1">
+                    Batalkan Permainan?
+                </h3>
+                <p id="exit-modal-desc" class="text-xs text-slate-600 font-semibold mb-6 px-2">
+                    Yakin ingin membatalkan sesi game saat ini?
+                </p>
+
+                <!-- 2 Button Grid Action -->
+                <div class="grid grid-cols-2 gap-3">
+                    <button onclick="closeExitModal()" class="py-2.5 btn-pop-blue rounded-2xl font-fredoka font-bold text-sm uppercase">
+                        BATAL
+                    </button>
+                    <button id="confirm-exit-btn" onclick="confirmExitAction()" class="py-2.5 btn-pop-red rounded-2xl font-fredoka font-bold text-sm uppercase">
+                        YA, KELUAR
+                    </button>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+
+    <!-- PURE JAVASCRIPT GAME LOGIC -->
+    <script>
+        /* =========================================================
+           1. AUDIO SYSTEM (Web Audio API Synthesizers)
+           ========================================================= */
+        let audioCtx = null;
+        let soundEnabled = true;
+
+        function initAudio() {
+            if (!audioCtx) {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                audioCtx = new AudioContext();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            const icon = document.getElementById('sound-icon');
+            if (soundEnabled) {
+                icon.className = 'fa-solid fa-volume-high';
+                playPopSound();
+            } else {
+                icon.className = 'fa-solid fa-volume-xmark';
+            }
+        }
+
+        // Sound 1: Click / Pop
+        function playPopSound() {
+            if (!soundEnabled) return;
+            initAudio();
+            try {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(400, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(800, audioCtx.currentTime + 0.08);
+                
+                gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.08);
+
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.08);
+            } catch (e) {}
+        }
+
+        // Sound 2: Shuffle / Tick Sound
+        function playTickSound() {
+            if (!soundEnabled) return;
+            initAudio();
+            try {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(300 + Math.random() * 200, audioCtx.currentTime);
+                
+                gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.05);
+
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.05);
+            } catch (e) {}
+        }
+
+        // Sound 3: Fanfare / Victory Reveal Chime
+        function playFanfareSound() {
+            if (!soundEnabled) return;
+            initAudio();
+            try {
+                const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+                notes.forEach((freq, index) => {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(freq, audioCtx.currentTime + index * 0.08);
+                    
+                    gain.gain.setValueAtTime(0.25, audioCtx.currentTime + index * 0.08);
+                    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + index * 0.08 + 0.3);
+
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.start(audioCtx.currentTime + index * 0.08);
+                    osc.stop(audioCtx.currentTime + index * 0.08 + 0.3);
+                });
+            } catch (e) {}
+        }
+
+
+        /* =========================================================
+           2. STATE MANAGEMENT & SETUP LOGIC
+           ========================================================= */
+        const AVATAR_COLORS = [
+            'bg-blue-400', 'bg-amber-400', 'bg-emerald-400', 'bg-rose-400', 'bg-purple-400'
+        ];
+        const AVATAR_EMOJIS = ['🐱', '🐶', '🦊', '🐸', '🐼'];
+
+        let players = [];
+        let currentPlayerIndex = 0;
+        let isGameplayActive = false;
+        let isShuffling = false;
+
+        function updatePlayerCountUI() {
+            const container = document.getElementById('player-inputs-container');
+            const rows = container.querySelectorAll('.player-input-row');
+            document.getElementById('player-count-text').innerText = rows.length;
+
+            const addBtn = document.getElementById('add-player-btn');
+            if (rows.length >= 5) {
+                addBtn.classList.add('opacity-50', 'pointer-events-none');
+            } else {
+                addBtn.classList.remove('opacity-50', 'pointer-events-none');
+            }
+
+            // Enable/disable remove buttons based on min 2 condition
+            rows.forEach((row) => {
+                const removeBtn = row.querySelector('.btn-remove-player');
+                if (rows.length <= 2) {
+                    removeBtn.disabled = true;
+                    removeBtn.className = 'btn-remove-player w-8 h-8 bg-gray-200 text-gray-400 border-2 border-gray-400 rounded-xl flex items-center justify-center text-xs font-bold transition-all';
+                } else {
+                    removeBtn.disabled = false;
+                    removeBtn.className = 'btn-remove-player w-8 h-8 btn-pop-red rounded-xl flex items-center justify-center text-xs font-bold transition-all';
+                }
+            });
+        }
+
+        function addPlayerInput() {
+            playPopSound();
+            const container = document.getElementById('player-inputs-container');
+            const rows = container.querySelectorAll('.player-input-row');
+            if (rows.length >= 5) return;
+
+            const newNum = rows.length + 1;
+            const colorClass = AVATAR_COLORS[newNum - 1] || 'bg-blue-400';
+
+            const rowDiv = document.createElement('div');
+            rowDiv.className = 'player-input-row flex items-center gap-2 animate-pop-in';
+            rowDiv.innerHTML = `
+                <div class="w-9 h-9 rounded-xl border-2 border-d-blue ${colorClass} flex items-center justify-center text-white font-bold font-fredoka text-sm shadow-sm">
+                    ${newNum}
+                </div>
+                <input type="text" value="Pemain ${newNum}" maxlength="12" class="player-name-input flex-1 bg-bg-sky border-2 border-d-blue rounded-xl px-3 py-1.5 font-fredoka text-d-blue text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-s-yellow">
+                <button onclick="removePlayerInput(this)" class="btn-remove-player w-8 h-8 btn-pop-red rounded-xl flex items-center justify-center text-xs font-bold transition-all">
+                    <i class="fa-solid fa-trash"></i>
+                </button>
+            `;
+            container.appendChild(rowDiv);
+            updatePlayerCountUI();
+        }
+
+        function removePlayerInput(btn) {
+            playPopSound();
+            const container = document.getElementById('player-inputs-container');
+            const rows = container.querySelectorAll('.player-input-row');
+            if (rows.length <= 2) return;
+
+            const row = btn.closest('.player-input-row');
+            row.remove();
+
+            // Re-index remaining inputs
+            const remainingRows = container.querySelectorAll('.player-input-row');
+            remainingRows.forEach((r, idx) => {
+                const numBadge = r.querySelector('div');
+                numBadge.innerText = idx + 1;
+                numBadge.className = `w-9 h-9 rounded-xl border-2 border-d-blue ${AVATAR_COLORS[idx]} flex items-center justify-center text-white font-bold font-fredoka text-sm shadow-sm`;
+            });
+
+            updatePlayerCountUI();
+        }
+
+        function startGameSession() {
+            playPopSound();
+            const inputs = document.querySelectorAll('.player-name-input');
+            players = [];
+
+            inputs.forEach((input, index) => {
+                let name = input.value.trim();
+                if (!name) name = `Pemain ${index + 1}`;
+                players.push({
+                    name: name,
+                    color: AVATAR_COLORS[index],
+                    emoji: AVATAR_EMOJIS[index]
+                });
+            });
+
+            if (players.length < 2) return;
+
+            currentPlayerIndex = 0;
+            isGameplayActive = true;
+
+            // Switch Screen
+            document.getElementById('setup-screen').classList.add('hidden');
+            document.getElementById('gameplay-screen').classList.remove('hidden');
+            document.getElementById('gameplay-screen').classList.add('flex');
+
+            updatePlayerTurnUI();
+            resetCardUI();
+        }
+
+
+        /* =========================================================
+           3. GAMEPLAY & CARD SHUFFLE LOGIC
+           ========================================================= */
+        function updatePlayerTurnUI() {
+            const player = players[currentPlayerIndex];
+            const avatarEl = document.getElementById('active-player-avatar');
+            avatarEl.innerText = player.emoji;
+            avatarEl.className = `w-11 h-11 rounded-xl border-2 border-d-blue ${player.color} flex items-center justify-center text-white font-fredoka font-bold text-xl shadow-sm`;
+            
+            document.getElementById('active-player-name').innerText = player.name;
+        }
+
+        function resetCardUI() {
+            const cardInner = document.getElementById('main-card-inner');
+            cardInner.classList.remove('rotate-y-180');
+            
+            document.getElementById('controls-front').classList.remove('hidden');
+            document.getElementById('controls-back').classList.add('hidden');
+            document.getElementById('controls-back').classList.remove('flex');
+
+            document.getElementById('sub-card-1').classList.remove('anim-shuffle-left');
+            document.getElementById('sub-card-2').classList.remove('anim-shuffle-right');
+
+            isShuffling = false;
+        }
+
+        function shuffleAndReveal() {
+            if (isShuffling) return;
+            isShuffling = true;
+            playPopSound();
+
+            const sub1 = document.getElementById('sub-card-1');
+            const sub2 = document.getElementById('sub-card-2');
+            
+            sub1.classList.add('anim-shuffle-left');
+            sub2.classList.add('anim-shuffle-right');
+
+            // Play ticking sound during shuffle
+            let ticks = 0;
+            const tickInterval = setInterval(() => {
+                playTickSound();
+                ticks++;
+                if (ticks >= 7) clearInterval(tickInterval);
+            }, 120);
+
+            // Finish shuffle after 1 second & flip card
+            setTimeout(() => {
+                sub1.classList.remove('anim-shuffle-left');
+                sub2.classList.remove('anim-shuffle-right');
+
+                // Determine Truth or Dare randomly
+                const isTruth = Math.random() < 0.5;
+                setupCardBackContent(isTruth);
+
+                // Flip Card 3D
+                document.getElementById('main-card-inner').classList.add('rotate-y-180');
+                playFanfareSound();
+
+                // Trigger Confetti Visual Effect
+                confetti({
+                    particleCount: 50,
+                    spread: 60,
+                    origin: { y: 0.6 }
+                });
+
+                // Toggle Bottom Controls
+                document.getElementById('controls-front').classList.add('hidden');
+                document.getElementById('controls-back').classList.remove('hidden');
+                document.getElementById('controls-back').classList.add('flex');
+            }, 1000);
+        }
+
+        function setupCardBackContent(isTruth) {
+            const badge = document.getElementById('result-badge');
+            const iconContainer = document.getElementById('result-icon-container');
+            const typeText = document.getElementById('result-type-text');
+            const descText = document.getElementById('result-desc-text');
+
+            if (isTruth) {
+                badge.className = 'w-full py-1.5 px-3 rounded-xl border-2 border-d-blue text-center font-fredoka font-bold text-sm tracking-wider uppercase text-white bg-p-blue shadow-sm';
+                iconContainer.className = 'w-24 h-24 rounded-3xl border-[4px] border-d-blue bg-s-yellow flex items-center justify-center text-5xl shadow-md my-2';
+                iconContainer.innerHTML = '🤫';
+                typeText.innerText = 'TRUTH';
+                typeText.className = 'font-fredoka font-extrabold text-3xl text-p-blue uppercase tracking-wide';
+                descText.innerText = 'Pemain harus menjawab 1 pertanyaan jujur dari teman-teman!';
+            } else {
+                badge.className = 'w-full py-1.5 px-3 rounded-xl border-2 border-d-blue text-center font-fredoka font-bold text-sm tracking-wider uppercase text-white bg-h-red shadow-sm';
+                iconContainer.className = 'w-24 h-24 rounded-3xl border-[4px] border-d-blue bg-red-100 flex items-center justify-center text-5xl shadow-md my-2';
+                iconContainer.innerHTML = '🔥';
+                typeText.innerText = 'DARE';
+                typeText.className = 'font-fredoka font-extrabold text-3xl text-h-red uppercase tracking-wide';
+                descText.innerText = 'Pemain harus melakukan 1 tantangan seru dari teman-teman!';
+            }
+        }
+
+        function nextTurn() {
+            playPopSound();
+            currentPlayerIndex = (currentPlayerIndex + 1) % players.length;
+            updatePlayerTurnUI();
+            resetCardUI();
+        }
+
+
+        /* =========================================================
+           4. TWO-TIER EXIT NAVIGATION SYSTEM
+           ========================================================= */
+        function handleExitClick() {
+            playPopSound();
+            const modal = document.getElementById('exit-modal');
+            const titleEl = document.getElementById('exit-modal-title');
+            const descEl = document.getElementById('exit-modal-desc');
+
+            if (isGameplayActive) {
+                // Tier 1: Inside Active Game Session
+                titleEl.innerText = "Batalkan Permainan?";
+                descEl.innerText = "Yakin ingin membatalkan sesi game saat ini?";
+            } else {
+                // Tier 2: Inside Setup Screen
+                titleEl.innerText = "Kembali ke Dashboard?";
+                descEl.innerText = "Yakin ingin keluar ke dashboard utama?";
+            }
+
+            modal.classList.remove('hidden');
+        }
+
+        function closeExitModal() {
+            playPopSound();
+            document.getElementById('exit-modal').classList.add('hidden');
+        }
+
+        function confirmExitAction() {
+            playPopSound();
+            document.getElementById('exit-modal').classList.add('hidden');
+
+            if (isGameplayActive) {
+                // Return back to Setup Screen
+                isGameplayActive = false;
+                document.getElementById('gameplay-screen').classList.add('hidden');
+                document.getElementById('gameplay-screen').classList.remove('flex');
+                document.getElementById('setup-screen').classList.remove('hidden');
+            } else {
+                // Redirect back to main dashboard
+                window.location.href = 'index.html';
+            }
+        }
+
+        // Initialize setup state on load
+        window.onload = function() {
+            updatePlayerCountUI();
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,1079 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SketchRoulette - Arcade SITMET.ea</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Google Fonts: Fredoka & Quicksand -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Quicksand:wght@500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Canvas Confetti Library -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'brand-blue': '#3B82F6',
+                        'd-blue': '#1D4ED8',
+                        'w-yellow': '#FACC15',
+                        'd-yellow': '#CA8A04',
+                        'h-red': '#EF4444',
+                        'd-red': '#991B1B',
+                        'bg-sky': '#EFF6FF',
+                        'bg-cream': '#FEFCE8'
+                    },
+                    fontFamily: {
+                        'fredoka': ['Fredoka', 'sans-serif'],
+                        'quicksand': ['Quicksand', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        * {
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+        }
+        body {
+            font-family: 'Quicksand', sans-serif;
+            background-color: #0F172A;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        
+        /* Cartoon 3D Pop Button Styles */
+        .btn-pop-blue {
+            background-color: #3B82F6;
+            color: #FFFFFF;
+            border: 4px solid #1D4ED8;
+            box-shadow: 0px 5px 0px 0px #1D4ED8;
+            transition: all 0.1s ease;
+        }
+        .btn-pop-blue:active:not(:disabled) {
+            transform: translateY(4px);
+            box-shadow: 0px 1px 0px 0px #1D4ED8;
+        }
+
+        .btn-pop-yellow {
+            background-color: #FACC15;
+            color: #1E293B;
+            border: 4px solid #CA8A04;
+            box-shadow: 0px 5px 0px 0px #CA8A04;
+            transition: all 0.1s ease;
+        }
+        .btn-pop-yellow:active:not(:disabled) {
+            transform: translateY(4px);
+            box-shadow: 0px 1px 0px 0px #CA8A04;
+        }
+
+        .btn-pop-red {
+            background-color: #EF4444;
+            color: #FFFFFF;
+            border: 4px solid #991B1B;
+            box-shadow: 0px 4px 0px 0px #991B1B;
+            transition: all 0.1s ease;
+        }
+        .btn-pop-red:active:not(:disabled) {
+            transform: translateY(4px);
+            box-shadow: 0px 0px 0px 0px #991B1B;
+        }
+
+        .btn-pop-green {
+            background-color: #22C55E;
+            color: #FFFFFF;
+            border: 4px solid #15803D;
+            box-shadow: 0px 5px 0px 0px #15803D;
+            transition: all 0.1s ease;
+        }
+        .btn-pop-green:active:not(:disabled) {
+            transform: translateY(4px);
+            box-shadow: 0px 1px 0px 0px #15803D;
+        }
+
+        /* Modal Backdrop */
+        .modal-backdrop {
+            background: rgba(15, 23, 42, 0.65);
+            backdrop-filter: blur(8px);
+        }
+
+        /* Custom Scrollbar Removal for frame */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        /* Canvas Style */
+        canvas {
+            touch-action: none;
+            cursor: crosshair;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- MAIN ARCADE FRAME CONTAINER -->
+    <div id="app-frame" class="w-full max-w-[400px] h-[100dvh] bg-bg-sky border-0 sm:border-[6px] border-d-blue rounded-none sm:rounded-[36px] overflow-hidden flex flex-col justify-between relative shadow-2xl no-scrollbar">
+        
+        <!-- PERMANENT TOP STATUS BAR -->
+        <header class="w-full bg-white border-b-4 border-d-blue px-4 py-2.5 flex items-center justify-between z-30 shrink-0 shadow-sm">
+            <!-- Game Title/Logo -->
+            <div class="flex items-center space-x-2">
+                <div class="w-8 h-8 rounded-xl bg-w-yellow border-2 border-d-yellow flex items-center justify-center text-d-yellow font-black text-lg">
+                    <i class="fa-solid fa-pencil"></i>
+                </div>
+                <span class="font-fredoka font-bold text-lg text-d-blue tracking-wide">SketchRoulette</span>
+            </div>
+
+            <!-- Header Controls (Sound Toggle & Exit Button) -->
+            <div class="flex items-center space-x-2">
+                <!-- Mute Toggle -->
+                <button id="sound-toggle-btn" onclick="toggleSound()" aria-label="Toggle Sound" class="w-9 h-9 btn-pop-yellow rounded-xl flex items-center justify-center font-fredoka font-extrabold text-base">
+                    <i id="sound-icon" class="fa-solid fa-volume-high"></i>
+                </button>
+                <!-- Exit Button -->
+                <button onclick="handleExitClick()" aria-label="Keluar Game" class="w-9 h-9 btn-pop-red rounded-xl flex items-center justify-center font-fredoka font-extrabold text-lg">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- DYNAMIC CONTENT VIEW CONTAINER -->
+        <main id="main-content" class="flex-1 overflow-y-auto no-scrollbar relative flex flex-col p-4">
+            
+            <!-- 1. SETUP SCREEN -->
+            <section id="screen-setup" class="flex-1 flex flex-col justify-between space-y-4">
+                <div class="text-center my-2">
+                    <span class="bg-w-yellow text-d-yellow border-2 border-d-yellow font-fredoka font-bold text-xs uppercase px-3 py-1 rounded-full inline-block mb-1 shadow-sm">Mode Arcade Impostor</span>
+                    <h1 class="font-fredoka font-extrabold text-3xl text-d-blue tracking-tight drop-shadow-sm">SKETCH ROULETTE</h1>
+                    <p class="font-quicksand font-semibold text-xs text-slate-600 mt-1">Cari Penyamar di Antara Para Pelukis!</p>
+                </div>
+
+                <!-- Theme Selection Card -->
+                <div class="bg-white border-[4px] border-d-blue rounded-2xl p-4 shadow-md space-y-2">
+                    <label class="font-fredoka font-bold text-sm text-d-blue flex items-center gap-2">
+                        <i class="fa-solid fa-icons text-w-yellow"></i> Pilih Tema Kata:
+                    </label>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button type="button" onclick="selectTheme('benda')" id="theme-benda-btn" class="py-2.5 px-3 rounded-xl border-3 border-d-blue font-fredoka font-bold text-sm flex items-center justify-center gap-2 transition-all btn-pop-yellow">
+                            <i class="fa-solid fa-cube"></i> Benda
+                        </button>
+                        <button type="button" onclick="selectTheme('hewan')" id="theme-hewan-btn" class="py-2.5 px-3 rounded-xl border-3 border-d-blue font-fredoka font-bold text-sm flex items-center justify-center gap-2 transition-all bg-slate-100 text-slate-500 border-slate-300">
+                            <i class="fa-solid fa-paw"></i> Hewan
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Player Count Selection -->
+                <div class="bg-white border-[4px] border-d-blue rounded-2xl p-4 shadow-md space-y-3">
+                    <div class="flex justify-between items-center">
+                        <label class="font-fredoka font-bold text-sm text-d-blue flex items-center gap-2">
+                            <i class="fa-solid fa-users text-brand-blue"></i> Jumlah Pemain:
+                        </label>
+                        <span id="player-count-display" class="font-fredoka font-extrabold text-lg text-d-blue bg-bg-sky px-3 py-0.5 rounded-lg border-2 border-d-blue">3</span>
+                    </div>
+                    <div class="grid grid-cols-4 gap-2">
+                        <button onclick="setPlayerCount(2)" class="player-count-btn py-1.5 rounded-xl border-2 border-d-blue font-fredoka font-bold text-sm bg-slate-100 text-slate-700" data-count="2">2</button>
+                        <button onclick="setPlayerCount(3)" class="player-count-btn py-1.5 rounded-xl border-2 border-d-blue font-fredoka font-bold text-sm bg-w-yellow text-slate-800" data-count="3">3</button>
+                        <button onclick="setPlayerCount(4)" class="player-count-btn py-1.5 rounded-xl border-2 border-d-blue font-fredoka font-bold text-sm bg-slate-100 text-slate-700" data-count="4">4</button>
+                        <button onclick="setPlayerCount(5)" class="player-count-btn py-1.5 rounded-xl border-2 border-d-blue font-fredoka font-bold text-sm bg-slate-100 text-slate-700" data-count="5">5</button>
+                    </div>
+
+                    <!-- Dynamic Player Name Inputs -->
+                    <div id="player-inputs-container" class="space-y-2 pt-2 max-h-[160px] overflow-y-auto no-scrollbar pr-1">
+                        <!-- Injected via JS -->
+                    </div>
+                </div>
+
+                <!-- Start Button -->
+                <button onclick="startGame()" class="w-full py-3.5 btn-pop-green rounded-2xl font-fredoka font-extrabold text-xl tracking-wide uppercase flex items-center justify-center gap-2 shadow-lg">
+                    <i class="fa-solid fa-play"></i> MULAI GAME
+                </button>
+            </section>
+
+            <!-- 2. SECRET REVEAL STAGE -->
+            <section id="screen-secret" class="hidden flex-1 flex flex-col justify-between items-center py-4 text-center">
+                <div class="w-full bg-white border-[4px] border-d-blue rounded-3xl p-6 shadow-md space-y-4 my-auto">
+                    <div class="w-20 h-20 mx-auto rounded-full bg-bg-sky border-4 border-d-blue flex items-center justify-center text-d-blue text-4xl shadow-inner">
+                        <i class="fa-solid fa-user-secret"></i>
+                    </div>
+                    <div>
+                        <span id="secret-player-indicator-badge" class="bg-w-yellow text-d-yellow border-2 border-d-yellow font-fredoka font-bold text-xs uppercase px-3 py-1 rounded-full inline-block mb-2">Giliran Mengintip Peran</span>
+                        <h2 id="secret-player-name" class="font-fredoka font-extrabold text-2xl text-d-blue">Pemain 1</h2>
+                        <p class="font-quicksand font-semibold text-xs text-slate-600 mt-2">
+                            Pegang HP secara rahasia. Jangan sampai pemain lain melihat layar Anda!
+                        </p>
+                    </div>
+
+                    <!-- Secret Word Card Box -->
+                    <div id="secret-word-box" class="bg-bg-sky border-3 border-d-blue border-dashed rounded-2xl p-4 min-h-[100px] flex flex-col items-center justify-center">
+                        <button id="reveal-word-btn" onclick="revealSecretRole()" class="btn-pop-yellow py-2.5 px-4 rounded-xl font-fredoka font-bold text-sm flex items-center gap-2">
+                            <i class="fa-solid fa-eye"></i> Intip Kartu Rahasia
+                        </button>
+                        <div id="revealed-word-content" class="hidden text-center">
+                            <span id="role-type-label" class="text-xs font-bold uppercase block mb-1">Peran Anda:</span>
+                            <span id="secret-word-text" class="font-fredoka font-extrabold text-2xl text-d-blue tracking-wider uppercase block">MOBIL</span>
+                            <span id="role-description-text" class="text-[11px] font-semibold text-slate-500 block mt-1">Gambar kata ini bersama teman-temanmu!</span>
+                        </div>
+                    </div>
+                </div>
+
+                <button id="secret-ready-btn" onclick="confirmSecretPeek()" disabled class="w-full py-3.5 btn-pop-blue rounded-2xl font-fredoka font-extrabold text-lg opacity-50 cursor-not-allowed">
+                    SAYA SUDAH INGAT <i class="fa-solid fa-check ml-1"></i>
+                </button>
+            </section>
+
+            <!-- 3. TURN SWITCH OVERLAY / PASS PHONE -->
+            <section id="screen-turn-pass" class="hidden flex-1 flex flex-col justify-between items-center py-6 text-center">
+                <div class="w-full bg-white border-[4px] border-d-blue rounded-3xl p-6 shadow-md space-y-4 my-auto">
+                    <div class="w-20 h-20 mx-auto rounded-full bg-w-yellow border-4 border-d-yellow flex items-center justify-center text-d-yellow text-4xl">
+                        <i class="fa-solid fa-hand-holding-hand"></i>
+                    </div>
+                    <div>
+                        <span id="turn-round-badge" class="bg-brand-blue text-white font-fredoka font-bold text-xs uppercase px-3 py-1 rounded-full inline-block mb-2">Ronde 1 dari 3</span>
+                        <h2 class="font-fredoka font-bold text-base text-slate-600">Berikan HP Kepada:</h2>
+                        <h3 id="next-player-name" class="font-fredoka font-extrabold text-3xl text-d-blue mt-1">Pemain 2</h3>
+                    </div>
+                    <p class="font-quicksand font-medium text-xs text-slate-500 bg-bg-sky p-3 rounded-xl border-2 border-d-blue">
+                        Tambahkan detail gambar dalam waktu singkat (5 detik)!
+                    </p>
+                </div>
+
+                <button onclick="startIndividualTurn()" class="w-full py-3.5 btn-pop-green rounded-2xl font-fredoka font-extrabold text-lg uppercase tracking-wide">
+                    SAYA SIAP! <i class="fa-solid fa-play ml-1"></i>
+                </button>
+            </section>
+
+            <!-- 4. DRAWING CANVAS PHASE -->
+            <section id="screen-drawing" class="hidden flex-1 flex flex-col justify-between space-y-2">
+                <!-- Top Turn Banner & Timer -->
+                <div class="bg-white border-[3px] border-d-blue rounded-2xl p-2.5 flex items-center justify-between shadow-sm">
+                    <div class="flex flex-col">
+                        <span id="draw-round-indicator" class="font-fredoka text-[10px] font-bold text-slate-500 uppercase">Ronde 1/3</span>
+                        <span id="draw-player-indicator" class="font-fredoka font-extrabold text-base text-d-blue truncate max-w-[150px]">Pemain 1</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <!-- 5s Countdown Timer -->
+                        <div class="w-12 h-10 bg-h-red border-2 border-d-red rounded-xl flex items-center justify-center text-white font-fredoka font-extrabold text-xl shadow-inner">
+                            <span id="timer-display">5</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Canvas Area -->
+                <div class="relative flex-1 w-full bg-white border-[4px] border-d-blue rounded-2xl overflow-hidden shadow-inner flex items-center justify-center min-h-[260px]">
+                    <canvas id="paint-canvas" class="w-full h-full bg-white"></canvas>
+
+                    <!-- Draw Instruction Overlay -->
+                    <div id="draw-hint-box" class="absolute top-2 left-2 right-2 bg-yellow-100/90 border border-d-yellow rounded-lg p-1.5 text-center pointer-events-none">
+                        <p id="draw-hint-text" class="font-fredoka text-xs text-d-yellow font-bold">Tambahkan 1 detail pada gambar!</p>
+                    </div>
+                </div>
+
+                <!-- Drawing Controls & Colors -->
+                <div class="bg-white border-[3px] border-d-blue rounded-2xl p-2.5 flex items-center justify-between gap-2 shadow-sm">
+                    <!-- Color Palette -->
+                    <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
+                        <button onclick="setBrushColor('#000000')" class="color-btn w-7 h-7 rounded-full bg-black border-2 border-slate-300 ring-2 ring-d-blue" data-color="#000000"></button>
+                        <button onclick="setBrushColor('#EF4444')" class="color-btn w-7 h-7 rounded-full bg-red-500 border-2 border-slate-300" data-color="#EF4444"></button>
+                        <button onclick="setBrushColor('#3B82F6')" class="color-btn w-7 h-7 rounded-full bg-blue-500 border-2 border-slate-300" data-color="#3B82F6"></button>
+                        <button onclick="setBrushColor('#22C55E')" class="color-btn w-7 h-7 rounded-full bg-green-500 border-2 border-slate-300" data-color="#22C55E"></button>
+                        <button onclick="setBrushColor('#FACC15')" class="color-btn w-7 h-7 rounded-full bg-yellow-400 border-2 border-slate-300" data-color="#FACC15"></button>
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="flex items-center gap-2">
+                        <button onclick="clearCanvasCurrentTurn()" class="py-1.5 px-3 btn-pop-red rounded-xl font-fredoka font-bold text-xs flex items-center gap-1">
+                            <i class="fa-solid fa-eraser"></i> Hapus
+                        </button>
+                        <button onclick="finishTurnEarly()" class="py-1.5 px-3 btn-pop-green rounded-xl font-fredoka font-bold text-xs flex items-center gap-1">
+                            <i class="fa-solid fa-check"></i> Selesai
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 5. GUESSING / VOTING PHASE OVERLAY -->
+            <section id="screen-guessing" class="hidden flex-1 flex flex-col justify-between space-y-3">
+                <div class="text-center">
+                    <span class="bg-h-red text-white font-fredoka font-bold text-xs uppercase px-3 py-1 rounded-full inline-block mb-1">Fase Voting Impostor</span>
+                    <h2 class="font-fredoka font-extrabold text-xl text-d-blue">Siapa Penyamarnya?</h2>
+                </div>
+
+                <!-- Final Canvas Preview Display -->
+                <div class="w-full h-40 bg-white border-[4px] border-d-blue rounded-2xl overflow-hidden shadow-inner flex items-center justify-center p-1 relative">
+                    <img id="final-canvas-img" src="" alt="Hasil Gambar" class="max-w-full max-h-full object-contain">
+                </div>
+
+                <!-- Turn Voting Card -->
+                <div class="bg-white border-[4px] border-d-blue rounded-2xl p-4 shadow-md flex-1 flex flex-col justify-between">
+                    <div id="guess-prompt-container" class="space-y-3">
+                        <div class="flex items-center justify-between border-b-2 border-slate-100 pb-2">
+                            <span class="font-fredoka font-bold text-sm text-slate-500">Giliran Memilih:</span>
+                            <span id="voter-name-display" class="font-fredoka font-extrabold text-lg text-d-blue">Pemain 1</span>
+                        </div>
+                        <p class="font-quicksand font-bold text-xs text-slate-600 text-center">
+                            Pilih pemain yang kamu curigai sebagai Impostor:
+                        </p>
+                        
+                        <!-- Player Voting Candidates Grid -->
+                        <div id="vote-options-grid" class="grid grid-cols-2 gap-2 pt-1 max-h-[140px] overflow-y-auto no-scrollbar">
+                            <!-- Injected dynamically -->
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 6. GAME RESULTS SCREEN -->
+            <section id="screen-results" class="hidden flex-1 flex flex-col justify-between space-y-3 text-center py-2">
+                <div class="bg-white border-[4px] border-d-blue rounded-3xl p-5 shadow-md space-y-3 my-auto">
+                    <!-- Result Header Icon -->
+                    <div id="result-icon-container" class="w-16 h-16 mx-auto rounded-full bg-w-yellow border-4 border-d-yellow flex items-center justify-center text-d-yellow text-3xl shadow-md">
+                        <i class="fa-solid fa-trophy"></i>
+                    </div>
+
+                    <div>
+                        <h2 id="result-title-text" class="font-fredoka font-extrabold text-2xl text-d-blue">ARTIS MENANG!</h2>
+                        <p id="result-subtitle-text" class="font-quicksand font-semibold text-xs text-slate-600 mt-1">
+                            Impostor berhasil ditemukan!
+                        </p>
+                    </div>
+
+                    <!-- Revealed Secret Info Box -->
+                    <div class="bg-bg-sky border-3 border-d-blue rounded-2xl p-3 space-y-1">
+                        <span class="text-[11px] font-bold text-slate-500 uppercase block">Impostor Asli Adalah:</span>
+                        <span id="final-impostor-name" class="font-fredoka font-extrabold text-2xl text-h-red tracking-wide uppercase block">PEMAIN 2</span>
+                        <div class="text-xs font-semibold text-slate-600 pt-1 border-t border-slate-200 mt-1">
+                            Kata Rahasia: <span id="final-secret-word" class="font-bold text-d-blue uppercase">MOBIL</span>
+                        </div>
+                    </div>
+
+                    <!-- Voting Recap -->
+                    <div class="text-left bg-slate-50 border-2 border-slate-200 rounded-xl p-3 max-h-[120px] overflow-y-auto no-scrollbar">
+                        <span class="font-fredoka font-bold text-xs text-slate-500 block mb-1">Hasil Suara Voting:</span>
+                        <ul id="voters-recap-list" class="space-y-1 text-xs font-bold text-slate-700">
+                            <!-- Injected dynamically -->
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Replay & Finish Buttons -->
+                <div class="space-y-2">
+                    <button onclick="resetGameToSetup()" class="w-full py-3.5 btn-pop-yellow rounded-2xl font-fredoka font-extrabold text-lg uppercase tracking-wide">
+                        <i class="fa-solid fa-rotate-right mr-1"></i> MAIN LAGI
+                    </button>
+                </div>
+            </section>
+        </main>
+
+        <!-- EXIT CONFIRMATION MODAL POPUP -->
+        <div id="exit-modal" class="hidden fixed inset-0 z-50 modal-backdrop flex items-center justify-center p-4">
+            <div class="bg-white rounded-[32px] border-[5px] border-d-blue shadow-2xl p-6 text-center max-w-[340px] w-full space-y-4 animate-bounce-gentle">
+                <!-- Icon Top -->
+                <div class="w-20 h-20 mx-auto rounded-full border-[4px] border-h-red bg-red-100 flex items-center justify-center shadow-inner">
+                    <i class="fa-solid fa-right-from-bracket text-h-red text-3xl"></i>
+                </div>
+                
+                <!-- Text -->
+                <div>
+                    <h3 id="exit-modal-title" class="font-fredoka font-extrabold text-xl text-d-blue">Batalkan Permainan?</h3>
+                    <p id="exit-modal-desc" class="font-quicksand font-semibold text-xs text-slate-600 mt-1">
+                        Yakin ingin membatalkan sesi game saat ini?
+                    </p>
+                </div>
+
+                <!-- 2 Buttons Grid -->
+                <div class="grid grid-cols-2 gap-3 pt-2">
+                    <button onclick="closeExitModal()" class="py-2.5 btn-pop-blue rounded-xl font-fredoka font-bold text-sm uppercase">
+                        BATAL
+                    </button>
+                    <button onclick="confirmExit()" class="py-2.5 btn-pop-red rounded-xl font-fredoka font-bold text-sm uppercase">
+                        YA, KELUAR
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- AUDIO & GAME LOGIC SCRIPT -->
+    <script>
+        /* =======================================================
+           1. AUDIO SYSTEM (Web Audio API Synthesizer)
+           ======================================================= */
+        let audioCtx = null;
+        let isMuted = false;
+
+        function initAudio() {
+            if (!audioCtx) {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                if (AudioContext) {
+                    audioCtx = new AudioContext();
+                }
+            }
+        }
+
+        function playSound(type) {
+            if (isMuted) return;
+            initAudio();
+            if (!audioCtx) return;
+
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+
+            const now = audioCtx.currentTime;
+
+            if (type === 'click') {
+                // Cartoon Pop Sound
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(400, now);
+                osc.frequency.exponentialRampToValueAtTime(800, now + 0.08);
+                
+                gain.gain.setValueAtTime(0.3, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
+
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start(now);
+                osc.stop(now + 0.08);
+            } 
+            else if (type === 'tick') {
+                // Urgent Woodblock/Tick Sound
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(1000, now);
+                osc.frequency.exponentialRampToValueAtTime(300, now + 0.04);
+
+                gain.gain.setValueAtTime(0.2, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.04);
+
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start(now);
+                osc.stop(now + 0.04);
+            }
+            else if (type === 'victory') {
+                // Victory Major Chime
+                const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+                notes.forEach((freq, idx) => {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(freq, now + idx * 0.1);
+
+                    gain.gain.setValueAtTime(0.25, now + idx * 0.1);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.1 + 0.3);
+
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.start(now + idx * 0.1);
+                    osc.stop(now + idx * 0.1 + 0.3);
+                });
+            }
+        }
+
+        function toggleSound() {
+            isMuted = !isMuted;
+            const icon = document.getElementById('sound-icon');
+            if (isMuted) {
+                icon.className = 'fa-solid fa-volume-xmark';
+            } else {
+                icon.className = 'fa-solid fa-volume-high';
+                playSound('click');
+            }
+        }
+
+        // Add universal click sound to buttons
+        document.addEventListener('click', (e) => {
+            if (e.target.closest('button')) {
+                playSound('click');
+            }
+        });
+
+
+        /* =======================================================
+           2. WORD DATABASE & GAME STATE
+           ======================================================= */
+        const WORD_DATABASE = {
+            benda: [
+                'Mobil', 'Sepatu', 'Kacamata', 'Telepon', 'Jam Dinding', 
+                'Topi', 'Payung', 'Cangkir', 'Gunting', 'Kunci', 
+                'Kipas Angin', 'Rumah', 'Buku', 'Lampu', 'Gitar'
+            ],
+            hewan: [
+                'Kucing', 'Anjing', 'Gajah', 'Jerapah', 'Kelinci', 
+                'Ikan', 'Burung', 'Ular', 'Kuda', 'Kupu-Kupu', 
+                'Kura-Kura', 'Ayam', 'Singa', 'Monjet', 'Bebek'
+            ]
+        };
+
+        let gameState = {
+            theme: 'benda',
+            playerCount: 3,
+            players: [],
+            impostorIndex: 0,
+            secretWord: '',
+            peekPlayerIndex: 0, // Track pass-the-phone peek state
+            currentRound: 1,
+            totalRounds: 3,
+            drawingOrder: [],
+            currentTurnIndex: 0,
+            votes: {}, // { voterIndex: votedPlayerIndex }
+            activeScreen: 'setup'
+        };
+
+
+        /* =======================================================
+           3. SETUP SCREEN CONTROLS
+           ======================================================= */
+        function selectTheme(selectedTheme) {
+            gameState.theme = selectedTheme;
+            const btnBenda = document.getElementById('theme-benda-btn');
+            const btnHewan = document.getElementById('theme-hewan-btn');
+
+            if (selectedTheme === 'benda') {
+                btnBenda.className = "py-2.5 px-3 rounded-xl border-3 border-d-blue font-fredoka font-bold text-sm flex items-center justify-center gap-2 transition-all btn-pop-yellow";
+                btnHewan.className = "py-2.5 px-3 rounded-xl border-3 border-d-blue font-fredoka font-bold text-sm flex items-center justify-center gap-2 transition-all bg-slate-100 text-slate-500 border-slate-300";
+            } else {
+                btnHewan.className = "py-2.5 px-3 rounded-xl border-3 border-d-blue font-fredoka font-bold text-sm flex items-center justify-center gap-2 transition-all btn-pop-yellow";
+                btnBenda.className = "py-2.5 px-3 rounded-xl border-3 border-d-blue font-fredoka font-bold text-sm flex items-center justify-center gap-2 transition-all bg-slate-100 text-slate-500 border-slate-300";
+            }
+        }
+
+        function setPlayerCount(count) {
+            gameState.playerCount = count;
+            document.getElementById('player-count-display').innerText = count;
+
+            // Highlight button
+            document.querySelectorAll('.player-count-btn').forEach(btn => {
+                if (parseInt(btn.getAttribute('data-count')) === count) {
+                    btn.className = "player-count-btn py-1.5 rounded-xl border-2 border-d-blue font-fredoka font-bold text-sm bg-w-yellow text-slate-800";
+                } else {
+                    btn.className = "player-count-btn py-1.5 rounded-xl border-2 border-d-blue font-fredoka font-bold text-sm bg-slate-100 text-slate-700";
+                }
+            });
+
+            renderPlayerInputs();
+        }
+
+        function renderPlayerInputs() {
+            const container = document.getElementById('player-inputs-container');
+            container.innerHTML = '';
+            for (let i = 0; i < gameState.playerCount; i++) {
+                const defaultName = `Pemain ${i + 1}`;
+                const div = document.createElement('div');
+                div.className = "flex items-center gap-2";
+                div.innerHTML = `
+                    <span class="w-6 font-fredoka font-bold text-xs text-slate-400 text-center">${i + 1}</span>
+                    <input type="text" id="player-input-${i}" value="${defaultName}" placeholder="Nama Pemain ${i + 1}" maxlength="12" class="flex-1 bg-bg-sky border-2 border-d-blue rounded-xl px-3 py-1.5 font-quicksand font-bold text-sm text-d-blue focus:outline-none focus:ring-2 focus:ring-w-yellow">
+                `;
+                container.appendChild(div);
+            }
+        }
+
+        // Initialize setup inputs on load
+        renderPlayerInputs();
+
+
+        /* =======================================================
+           4. SCREEN SWITCHING & FLOW LOGIC
+           ======================================================= */
+        function switchScreen(screenId) {
+            const screens = ['setup', 'secret', 'turn-pass', 'drawing', 'guessing', 'results'];
+            screens.forEach(s => {
+                const el = document.getElementById(`screen-${s}`);
+                if (s === screenId) {
+                    el.classList.remove('hidden');
+                } else {
+                    el.classList.add('hidden');
+                }
+            });
+            gameState.activeScreen = screenId;
+        }
+
+        function startGame() {
+            // Read player names
+            gameState.players = [];
+            for (let i = 0; i < gameState.playerCount; i++) {
+                const val = document.getElementById(`player-input-${i}`).value.trim();
+                gameState.players.push(val || `Pemain ${i + 1}`);
+            }
+
+            // Pick 1 Impostor randomly
+            gameState.impostorIndex = Math.floor(Math.random() * gameState.players.length);
+
+            // Pick Secret Word for non-impostors
+            const wordList = WORD_DATABASE[gameState.theme];
+            gameState.secretWord = wordList[Math.floor(Math.random() * wordList.length)];
+
+            // Total rounds: 3 rounds for 2-3 players, 2 rounds for 4-5 players
+            gameState.totalRounds = (gameState.playerCount <= 3) ? 3 : 2;
+            gameState.currentRound = 1;
+
+            // Simple sequential drawing order starting from Player 0
+            gameState.drawingOrder = [];
+            for (let r = 0; r < gameState.totalRounds; r++) {
+                for (let i = 0; i < gameState.playerCount; i++) {
+                    gameState.drawingOrder.push(i);
+                }
+            }
+            gameState.currentTurnIndex = 0;
+            gameState.votes = {};
+            gameState.peekPlayerIndex = 0;
+
+            // Clear canvas
+            initCanvas();
+            clearCanvasFull();
+
+            // Start secret card peek phase for Player 1
+            showNextPlayerPeek();
+        }
+
+        function showNextPlayerPeek() {
+            const pIdx = gameState.peekPlayerIndex;
+            document.getElementById('secret-player-indicator-badge').innerText = `Intip Peran (${pIdx + 1}/${gameState.playerCount})`;
+            document.getElementById('secret-player-name').innerText = gameState.players[pIdx];
+
+            // Reset reveal box
+            document.getElementById('reveal-word-btn').classList.remove('hidden');
+            document.getElementById('revealed-word-content').classList.add('hidden');
+
+            const readyBtn = document.getElementById('secret-ready-btn');
+            readyBtn.disabled = true;
+            readyBtn.classList.add('opacity-50', 'cursor-not-allowed');
+
+            switchScreen('secret');
+        }
+
+        function revealSecretRole() {
+            document.getElementById('reveal-word-btn').classList.add('hidden');
+            const revealedContent = document.getElementById('revealed-word-content');
+            revealedContent.classList.remove('hidden');
+
+            const pIdx = gameState.peekPlayerIndex;
+            const label = document.getElementById('role-type-label');
+            const wordText = document.getElementById('secret-word-text');
+            const desc = document.getElementById('role-description-text');
+
+            if (pIdx === gameState.impostorIndex) {
+                // Impostor role
+                label.className = "text-xs font-bold uppercase block mb-1 text-h-red";
+                label.innerText = "PERAN ANDA: IMPOSTOR!";
+                wordText.className = "font-fredoka font-extrabold text-2xl text-h-red tracking-wider uppercase block";
+                wordText.innerText = "??? (RAHASIA)";
+                desc.innerText = "Kamu tidak tahu katanya! Pura-pura melukis agar tidak dicurigai.";
+            } else {
+                // Artist role
+                label.className = "text-xs font-bold uppercase block mb-1 text-d-blue";
+                label.innerText = "PERAN ANDA: PELUKIS ASLI";
+                wordText.className = "font-fredoka font-extrabold text-2xl text-d-blue tracking-wider uppercase block";
+                wordText.innerText = gameState.secretWord;
+                desc.innerText = "Gambar kata di atas bersama teman-temanmu dan temukan penyamarnya!";
+            }
+
+            const readyBtn = document.getElementById('secret-ready-btn');
+            readyBtn.disabled = false;
+            readyBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+        }
+
+        function confirmSecretPeek() {
+            gameState.peekPlayerIndex++;
+            if (gameState.peekPlayerIndex < gameState.playerCount) {
+                // Pass HP to next player to peek role
+                showNextPlayerPeek();
+            } else {
+                // Everyone peeked their role! Proceed to drawing relay
+                prepareNextTurnPassScreen();
+            }
+        }
+
+        function prepareNextTurnPassScreen() {
+            if (gameState.currentTurnIndex >= gameState.drawingOrder.length) {
+                startGuessingPhase();
+                return;
+            }
+
+            const nextPlayerIdx = gameState.drawingOrder[gameState.currentTurnIndex];
+            const currentRoundNum = Math.floor(gameState.currentTurnIndex / gameState.playerCount) + 1;
+
+            document.getElementById('turn-round-badge').innerText = `Ronde ${currentRoundNum} dari ${gameState.totalRounds}`;
+            document.getElementById('next-player-name').innerText = gameState.players[nextPlayerIdx];
+
+            switchScreen('turn-pass');
+        }
+
+        function startIndividualTurn() {
+            switchScreen('drawing');
+
+            const currentPlayerIdx = gameState.drawingOrder[gameState.currentTurnIndex];
+            const currentRoundNum = Math.floor(gameState.currentTurnIndex / gameState.playerCount) + 1;
+
+            document.getElementById('draw-round-indicator').innerText = `Ronde ${currentRoundNum}/${gameState.totalRounds}`;
+            document.getElementById('draw-player-indicator').innerText = gameState.players[currentPlayerIdx];
+
+            const hintText = document.getElementById('draw-hint-text');
+            hintText.innerText = "Tambahkan 1 garis/detail pada gambar secara cepat!";
+
+            // Resize canvas context properly
+            resizeCanvas();
+
+            // Start 5 Seconds Timer
+            startTurnTimer(5);
+        }
+
+        /* =======================================================
+           5. CANVAS & DRAWING LOGIC
+           ======================================================= */
+        let canvas = null;
+        let ctx = null;
+        let isDrawing = false;
+        let lastX = 0;
+        let lastY = 0;
+        let currentColor = '#000000';
+        let currentBrushSize = 4;
+
+        function initCanvas() {
+            canvas = document.getElementById('paint-canvas');
+            if (!canvas) return;
+            ctx = canvas.getContext('2d');
+
+            // Mouse events
+            canvas.addEventListener('mousedown', startStroke);
+            canvas.addEventListener('mousemove', drawStroke);
+            canvas.addEventListener('mouseup', stopStroke);
+            canvas.addEventListener('mouseleave', stopStroke);
+
+            // Touch events for Mobile
+            canvas.addEventListener('touchstart', (e) => {
+                const touch = e.touches[0];
+                startStroke(touch);
+            }, { passive: false });
+
+            canvas.addEventListener('touchmove', (e) => {
+                e.preventDefault();
+                const touch = e.touches[0];
+                drawStroke(touch);
+            }, { passive: false });
+
+            canvas.addEventListener('touchend', stopStroke);
+        }
+
+        function resizeCanvas() {
+            if (!canvas || !canvas.parentElement) return;
+            const parent = canvas.parentElement;
+            const rect = parent.getBoundingClientRect();
+
+            if (rect.width === 0 || rect.height === 0) return;
+
+            let imgData = null;
+            if (canvas.width > 0 && canvas.height > 0) {
+                try {
+                    imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                } catch(e) {
+                    imgData = null;
+                }
+            }
+
+            canvas.width = rect.width;
+            canvas.height = rect.height;
+
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            if (imgData) {
+                ctx.putImageData(imgData, 0, 0);
+            }
+        }
+
+        function getCanvasCoords(e) {
+            const rect = canvas.getBoundingClientRect();
+            return {
+                x: (e.clientX - rect.left),
+                y: (e.clientY - rect.top)
+            };
+        }
+
+        function startStroke(e) {
+            isDrawing = true;
+            const coords = getCanvasCoords(e);
+            lastX = coords.x;
+            lastY = coords.y;
+        }
+
+        function drawStroke(e) {
+            if (!isDrawing) return;
+            const coords = getCanvasCoords(e);
+
+            ctx.beginPath();
+            ctx.moveTo(lastX, lastY);
+            ctx.lineTo(coords.x, coords.y);
+            ctx.strokeStyle = currentColor;
+            ctx.lineWidth = currentBrushSize;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            ctx.stroke();
+
+            lastX = coords.x;
+            lastY = coords.y;
+        }
+
+        function stopStroke() {
+            isDrawing = false;
+        }
+
+        function setBrushColor(hex) {
+            currentColor = hex;
+            document.querySelectorAll('.color-btn').forEach(btn => {
+                if (btn.getAttribute('data-color') === hex) {
+                    btn.classList.add('ring-2', 'ring-d-blue');
+                } else {
+                    btn.classList.remove('ring-2', 'ring-d-blue');
+                }
+            });
+        }
+
+        function clearCanvasFull() {
+            if (!ctx || !canvas) return;
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+
+        function clearCanvasCurrentTurn() {
+            clearCanvasFull();
+        }
+
+        /* =======================================================
+           6. TIMER SYSTEM
+           ======================================================= */
+        let timerInterval = null;
+        let timeLeft = 5;
+
+        function startTurnTimer(seconds) {
+            clearInterval(timerInterval);
+            timeLeft = seconds;
+            document.getElementById('timer-display').innerText = timeLeft;
+
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                document.getElementById('timer-display').innerText = timeLeft;
+                playSound('tick');
+
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    finishTurnEarly();
+                }
+            }, 1000);
+        }
+
+        function finishTurnEarly() {
+            clearInterval(timerInterval);
+            gameState.currentTurnIndex++;
+            prepareNextTurnPassScreen();
+        }
+
+        /* =======================================================
+           7. VOTING PHASE & IMPOSTOR REVEAL LOGIC
+           ======================================================= */
+        let votingPlayersQueue = [];
+        let currentVoterIndexInQueue = 0;
+
+        function startGuessingPhase() {
+            // Save final canvas to image preview
+            const dataURL = canvas.toDataURL('image/png');
+            document.getElementById('final-canvas-img').src = dataURL;
+
+            // All players get a turn to vote for the Impostor
+            votingPlayersQueue = [];
+            for (let i = 0; i < gameState.playerCount; i++) {
+                votingPlayersQueue.push(i);
+            }
+            currentVoterIndexInQueue = 0;
+
+            renderVoterTurn();
+            switchScreen('guessing');
+        }
+
+        function renderVoterTurn() {
+            if (currentVoterIndexInQueue >= votingPlayersQueue.length) {
+                // All players have voted! Evaluate results
+                evaluateAndShowResults();
+                return;
+            }
+
+            const voterIdx = votingPlayersQueue[currentVoterIndexInQueue];
+            document.getElementById('voter-name-display').innerText = gameState.players[voterIdx];
+
+            const container = document.getElementById('vote-options-grid');
+            container.innerHTML = '';
+
+            // Render buttons for all other players except oneself
+            for (let i = 0; i < gameState.playerCount; i++) {
+                if (i !== voterIdx) {
+                    const candidateIdx = i;
+                    const btn = document.createElement('button');
+                    btn.className = "py-3 px-2 btn-pop-blue rounded-xl font-fredoka font-bold text-sm text-center truncate flex items-center justify-center gap-1";
+                    btn.innerHTML = `<i class="fa-solid fa-user-ninja text-xs opacity-70"></i> ${gameState.players[candidateIdx]}`;
+                    btn.onclick = () => recordVote(voterIdx, candidateIdx);
+                    container.appendChild(btn);
+                }
+            }
+        }
+
+        function recordVote(voterIdx, votedCandidateIdx) {
+            gameState.votes[voterIdx] = votedCandidateIdx;
+            currentVoterIndexInQueue++;
+            renderVoterTurn();
+        }
+
+        /* =======================================================
+           8. RESULTS EVALUATION (ARTISTS vs IMPOSTOR)
+           ======================================================= */
+        function evaluateAndShowResults() {
+            switchScreen('results');
+
+            // Count votes for each player
+            const voteCounts = new Array(gameState.playerCount).fill(0);
+            const recapList = document.getElementById('voters-recap-list');
+            recapList.innerHTML = '';
+
+            votingPlayersQueue.forEach(voterIdx => {
+                const votedIdx = gameState.votes[voterIdx];
+                voteCounts[votedIdx]++;
+
+                const li = document.createElement('li');
+                li.className = "flex justify-between items-center";
+                li.innerHTML = `
+                    <span>${gameState.players[voterIdx]} memilih: <strong class="text-slate-900">${gameState.players[votedIdx]}</strong></span>
+                `;
+                recapList.appendChild(li);
+            });
+
+            // Find player(s) with maximum votes
+            let maxVotes = -1;
+            let mostVotedPlayers = [];
+
+            voteCounts.forEach((count, pIdx) => {
+                if (count > maxVotes) {
+                    maxVotes = count;
+                    mostVotedPlayers = [pIdx];
+                } else if (count === maxVotes && count > 0) {
+                    mostVotedPlayers.push(pIdx);
+                }
+            });
+
+            // Artists win if the Impostor is strictly among the most voted!
+            const impostorCaught = mostVotedPlayers.includes(gameState.impostorIndex);
+
+            const titleEl = document.getElementById('result-title-text');
+            const subTitleEl = document.getElementById('result-subtitle-text');
+            const iconContainer = document.getElementById('result-icon-container');
+
+            document.getElementById('final-impostor-name').innerText = gameState.players[gameState.impostorIndex];
+            document.getElementById('final-secret-word').innerText = gameState.secretWord;
+
+            if (impostorCaught) {
+                // Artists Won
+                playSound('victory');
+                triggerConfetti();
+
+                titleEl.innerText = "PELUKIS MENANG!";
+                subTitleEl.innerText = `${gameState.players[gameState.impostorIndex]} tertangkap sebagai Impostor!`;
+                iconContainer.className = "w-16 h-16 mx-auto rounded-full bg-w-yellow border-4 border-d-yellow flex items-center justify-center text-d-yellow text-3xl shadow-md";
+                iconContainer.innerHTML = '<i class="fa-solid fa-trophy"></i>';
+            } else {
+                // Impostor Won
+                titleEl.innerText = "IMPOSTOR MENANG!";
+                subTitleEl.innerText = `${gameState.players[gameState.impostorIndex]} berhasil bersembunyi tanpa tertangkap!`;
+                iconContainer.className = "w-16 h-16 mx-auto rounded-full bg-red-100 border-4 border-h-red flex items-center justify-center text-h-red text-3xl shadow-md";
+                iconContainer.innerHTML = '<i class="fa-solid fa-mask"></i>';
+            }
+        }
+
+        function triggerConfetti() {
+            if (typeof confetti === 'function') {
+                confetti({
+                    particleCount: 80,
+                    spread: 70,
+                    origin: { y: 0.6 }
+                });
+            }
+        }
+
+        function resetGameToSetup() {
+            clearInterval(timerInterval);
+            switchScreen('setup');
+        }
+
+        /* =======================================================
+           9. TWO-TIER EXIT SYSTEM & NAVIGATION
+           ======================================================= */
+        function handleExitClick() {
+            playSound('click');
+            const modalTitle = document.getElementById('exit-modal-title');
+            const modalDesc = document.getElementById('exit-modal-desc');
+
+            if (gameState.activeScreen === 'setup') {
+                // ON SETUP SCREEN: Prompt back to Dashboard
+                modalTitle.innerText = "Kembali ke Dashboard?";
+                modalDesc.innerText = "Yakin ingin keluar ke dashboard utama?";
+            } else {
+                // DURING GAMEPLAY: Prompt cancel game session back to setup
+                modalTitle.innerText = "Batalkan Permainan?";
+                modalDesc.innerText = "Yakin ingin membatalkan sesi game saat ini?";
+            }
+
+            document.getElementById('exit-modal').classList.remove('hidden');
+        }
+
+        function closeExitModal() {
+            playSound('click');
+            document.getElementById('exit-modal').classList.add('hidden');
+        }
+
+        function confirmExit() {
+            playSound('click');
+            closeExitModal();
+
+            if (gameState.activeScreen === 'setup') {
+                // Redirect to main dashboard file as required
+                window.location.href = 'index.html';
+            } else {
+                // Cancel active game session and go back to setup screen
+                clearInterval(timerInterval);
+                resetGameToSetup();
+            }
+        }
+
+        // Window Load Setup
+        window.onload = function() {
+            initCanvas();
+            resizeCanvas();
+            window.addEventListener('resize', resizeCanvas);
+        };
+    </script>
+</body>
+</html>
